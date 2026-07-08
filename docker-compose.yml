@@ -1,0 +1,41 @@
+services:
+
+  postgres:
+
+    image: postgres:17
+
+    container_name: hireplay-postgres
+
+    restart: always
+
+    environment:
+
+      POSTGRES_USER: postgres
+
+      POSTGRES_PASSWORD: postgres123
+
+      POSTGRES_DB: hireplay
+
+    ports:
+
+      - "5433:5432"
+
+    volumes:
+
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+
+    image: redis:7
+
+    container_name: hireplay-redis
+
+    ports:
+
+      - "6379:6379"
+
+    restart: always
+
+volumes:
+
+  postgres_data:
