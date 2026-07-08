@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
-import { env } from "../config/env.js";
-import AppError from "../utils/AppError.js";
-import { generateAccessToken } from "../utils/jwt.js";
+import { env } from "../../../config/env.js";
+import AppError from "../../../utils/AppError.js";
+import { generateAccessToken } from "../../../utils/jwt.js";
 import {
   createUser,
   findUserByEmail,

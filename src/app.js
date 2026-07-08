@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 
 import { errorHandler } from "./middleware/error.middleware.js";
-import authRoutes from "./routes/auth.routes.js";
+import { authRoutes } from "./modules/auth/index.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";

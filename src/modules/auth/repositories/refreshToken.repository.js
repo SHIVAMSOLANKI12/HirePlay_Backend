@@ -1,4 +1,4 @@
-import prisma from "../config/prisma.js";
+import prisma from "../../../config/prisma.js";
 
 export const createRefreshToken = async (data) => {
   return prisma.refreshToken.create({
