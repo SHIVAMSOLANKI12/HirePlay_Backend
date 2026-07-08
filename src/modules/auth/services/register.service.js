@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { env } from "../../../config/env.js";
 import AppError from "../../../utils/AppError.js";
-import { generateAccessToken } from "../../../utils/jwt.js";
+import { createAccessToken } from "../utils/authToken.util.js";
 import {
   createUser,
   findUserByEmail,
@@ -24,7 +24,7 @@ export const registerService = async (data) => {
     password: hashedPassword,
   });
 
-  const accessToken = generateAccessToken(user);
+  const accessToken = createAccessToken(user);
 
   return {
     user,

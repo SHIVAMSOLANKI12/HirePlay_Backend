@@ -2,13 +2,25 @@ import prisma from "../../../config/prisma.js";
 
 export const findUserByEmail = async (email) => {
   return prisma.user.findUnique({
-    where: { email },
+    where: {
+      email,
+    },
   });
 };
 
 export const findUserById = async (id) => {
   return prisma.user.findUnique({
-    where: { id },
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 };
 
@@ -27,7 +39,9 @@ export const createUser = async (userData) => {
 
 export const updateUser = async (id, data) => {
   return prisma.user.update({
-    where: { id },
+    where: {
+      id,
+    },
     data,
   });
 };
