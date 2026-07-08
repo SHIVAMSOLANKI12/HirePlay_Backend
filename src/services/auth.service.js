@@ -5,7 +5,7 @@ import { generateAccessToken } from "../utils/jwt.js";
 import {
   createUser,
   findUserByEmail,
-} from "../repositories/auth.repository.js";
+} from "../repositories/user.repository.js";
 
 export const registerService = async (data) => {
   const existingUser = await findUserByEmail(data.email);
