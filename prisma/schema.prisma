@@ -15,6 +15,7 @@ model User {
   role           Role           @default(CANDIDATE)
 
   refreshTokens  RefreshToken[]
+  company        Company?
 
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -40,4 +41,32 @@ enum Role {
   ADMIN
   HR
   CANDIDATE
+}
+
+enum CompanySize {
+  SOLO
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+model Company {
+  id           String      @id @default(cuid())
+  name         String
+  slug         String      @unique
+  email        String?
+  phone        String?
+  website      String?
+  industry     String?
+  companySize  CompanySize
+  logo         String?
+  description  String?
+
+  ownerId      String      @unique
+  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
 }
