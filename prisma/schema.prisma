@@ -15,7 +15,7 @@ model User {
   role           Role           @default(CANDIDATE)
 
   refreshTokens  RefreshToken[]
-  company        Company?
+  company        Company[]
 
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -63,7 +63,18 @@ model Company {
   logo         String?
   description  String?
 
-  ownerId      String      @unique
+  // Settings
+  timezone            String    @default("UTC")
+  language            String    @default("en")
+  currency            String    @default("USD")
+  dateFormat          String    @default("YYYY-MM-DD")
+  timeFormat          String    @default("24h")
+  emailNotifications  Boolean   @default(true)
+  smsNotifications    Boolean   @default(false)
+  careerPagePublic    Boolean   @default(true)
+  defaultHiringStage  String    @default("Applied")
+
+  ownerId      String
   owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   createdAt    DateTime    @default(now())

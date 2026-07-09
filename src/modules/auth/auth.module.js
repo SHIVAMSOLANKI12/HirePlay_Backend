@@ -5,11 +5,11 @@ import logoutRoutes from "./routes/logout.route.js";
 import logoutAllRoutes from "./routes/logoutAll.route.js";
 import meRoutes from "./routes/me.route.js";
 
-export {
-    registerRoutes,
-    loginRoutes,
-    refreshRoutes,
-    logoutRoutes,
-    logoutAllRoutes,
-  meRoutes,
-};
+export default function authModule(app) {
+  app.use("/api/v1/auth", registerRoutes);
+  app.use("/api/v1/auth", loginRoutes);
+  app.use("/api/v1/auth", refreshRoutes);
+  app.use("/api/v1/auth", logoutRoutes);
+  app.use("/api/v1/auth", logoutAllRoutes);
+  app.use("/api/v1/auth", meRoutes);
+}

@@ -2,9 +2,11 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import path from "path";
 
 import { errorHandler } from "./middleware/error.middleware.js";
-import { registerRoutes, loginRoutes, refreshRoutes, logoutRoutes, logoutAllRoutes, meRoutes } from "./modules/auth/index.js";
+import authModule from "./modules/auth/auth.module.js";
+import companyModule from "./modules/company/company.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -22,6 +24,9 @@ app.use(cookieParser());
 
 app.use(limiter);
 
+// Serve static files for uploads
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -30,12 +35,8 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use("/api/v1/auth", registerRoutes);
-app.use("/api/v1/auth", loginRoutes);
-app.use("/api/v1/auth", refreshRoutes);
-app.use("/api/v1/auth", logoutRoutes);
-app.use("/api/v1/auth", logoutAllRoutes);
-app.use("/api/v1/auth", meRoutes);
+authModule(app);
+companyModule(app);
 
 // Error handler should always be last
 app.use(errorHandler);
