@@ -8,6 +8,7 @@ import { errorHandler } from "./middleware/error.middleware.js";
 import authModule from "./modules/auth/auth.module.js";
 import companyModule from "./modules/company/company.module.js";
 import hrModule from "./modules/hr/hr.module.js";
+import jobModule from "./modules/job/job.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -39,6 +40,7 @@ app.get("/", (req, res) => {
 authModule(app);
 companyModule(app);
 hrModule(app);
+jobModule(app);
 
 // Error handler should always be last
 app.use(errorHandler);

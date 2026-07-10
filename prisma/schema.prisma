@@ -58,6 +58,7 @@ model Company {
   timezone           String      @default("UTC")
   owner              User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   hrs                HR[]
+  jobs               Job[]
 }
 
 model HR {
@@ -79,7 +80,8 @@ model HR {
 }
 
 enum Role {
-  ADMIN
+  SUPER_ADMIN
+  COMPANY_ADMIN
   HR
   CANDIDATE
 }
@@ -96,4 +98,51 @@ enum HRStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
+}
+
+model Job {
+  id              String         @id @default(uuid())
+  companyId       String
+  createdBy       String
+  title           String
+  department      String
+  employmentType  EmploymentType
+  experienceLevel String?
+  location        String
+  workMode        WorkMode
+  salaryMin       Float?
+  salaryMax       Float?
+  currency        String         @default("USD")
+  description     String
+  requirements    String
+  benefits        String?
+  status          JobStatus      @default(DRAFT)
+  publishedAt     DateTime?
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum WorkMode {
+  ONSITE
+  REMOTE
+  HYBRID
 }

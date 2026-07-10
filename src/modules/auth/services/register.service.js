@@ -20,8 +20,10 @@ export const registerService = async (data) => {
   );
 
   const user = await createUser({
-    ...data,
+    name: data.name,
+    email: data.email,
     password: hashedPassword,
+    role: "COMPANY_ADMIN",
   });
 
   const accessToken = createAccessToken(user);
