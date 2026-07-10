@@ -1,18 +1,18 @@
 import AppError from "../utils/AppError.js";
 
-export const requireRole = (...roles) => {
+/**
+ * Middleware to restrict access based on user roles.
+ * @param {...string} allowedRoles - List of roles that are allowed to access the route.
+ * @returns {Function} Express middleware function
+ */
+export const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !req.user.role) {
-      return next(new AppError("Not authorized, role information missing", 401));
+      return next(new AppError("You are not authorized to access this resource.", 403));
     }
 
-    if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError(
-          `Role: ${req.user.role} is not authorized to access this resource`,
-          403
-        )
-      );
+    if (!allowedRoles.includes(req.user.role)) {
+      return next(new AppError("You are not authorized to access this resource.", 403));
     }
 
     next();

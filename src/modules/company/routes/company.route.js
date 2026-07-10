@@ -12,6 +12,7 @@ import { uploadCompanyLogo } from "../controllers/uploadCompanyLogo.controller.j
 import { companyLogoUploadMiddleware } from "../../../middleware/companyLogoUpload.middleware.js";
 import { getCompanySettings } from "../controllers/getCompanySettings.controller.js";
 import { updateCompanySettings } from "../controllers/updateCompanySettings.controller.js";
+import { requireRole } from "../../../middleware/requireRole.middleware.js";
 
 const router = Router();
 
@@ -30,18 +31,21 @@ router.get(
 router.patch(
   "/",
   requireAuth,
+  requireRole("COMPANY_ADMIN"),
   updateCompany
 );
 
 router.delete(
   "/",
   requireAuth,
+  requireRole("COMPANY_ADMIN"),
   deleteCompany
 );
 
 router.patch(
   "/logo",
   requireAuth,
+  requireRole("COMPANY_ADMIN"),
   companyLogoUploadMiddleware,
   uploadCompanyLogo
 );
@@ -49,12 +53,14 @@ router.patch(
 router.get(
   "/settings",
   requireAuth,
+  requireRole("COMPANY_ADMIN"),
   getCompanySettings
 );
 
 router.patch(
   "/settings",
   requireAuth,
+  requireRole("COMPANY_ADMIN"),
   updateCompanySettings
 );
 

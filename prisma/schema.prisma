@@ -8,33 +8,74 @@ datasource db {
 }
 
 model User {
-  id             String         @id @default(uuid())
-  name           String
-  email          String         @unique
-  password       String
-  role           Role           @default(CANDIDATE)
-
-  refreshTokens  RefreshToken[]
-  company        Company[]
-
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role           @default(CANDIDATE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  company       Company[]
+  refreshTokens RefreshToken[]
 }
 
 model RefreshToken {
-  id         String   @id @default(uuid())
-  token      String   @unique
-
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  expiresAt  DateTime
-  isRevoked  Boolean  @default(false)
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  isRevoked Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Company {
+  id                 String      @id @default(cuid())
+  name               String
+  slug               String      @unique
+  email              String?
+  phone              String?
+  website            String?
+  industry           String?
+  companySize        CompanySize
+  logo               String?
+  description        String?
+  ownerId            String
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  deletedAt          DateTime?
+  careerPagePublic   Boolean     @default(true)
+  currency           String      @default("USD")
+  dateFormat         String      @default("YYYY-MM-DD")
+  defaultHiringStage String      @default("Applied")
+  emailNotifications Boolean     @default(true)
+  language           String      @default("en")
+  smsNotifications   Boolean     @default(false)
+  timeFormat         String      @default("24h")
+  timezone           String      @default("UTC")
+  owner              User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  hrs                HR[]
+}
+
+model HR {
+  id          String    @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String    @unique
+  phone       String
+  designation String
+  password    String
+  role        Role      @default(HR)
+  status      String    @default("ACTIVE")
+  avatar      String?
+  companyId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
@@ -51,33 +92,8 @@ enum CompanySize {
   ENTERPRISE
 }
 
-model Company {
-  id           String      @id @default(cuid())
-  name         String
-  slug         String      @unique
-  email        String?
-  phone        String?
-  website      String?
-  industry     String?
-  companySize  CompanySize
-  logo         String?
-  description  String?
-
-  // Settings
-  timezone            String    @default("UTC")
-  language            String    @default("en")
-  currency            String    @default("USD")
-  dateFormat          String    @default("YYYY-MM-DD")
-  timeFormat          String    @default("24h")
-  emailNotifications  Boolean   @default(true)
-  smsNotifications    Boolean   @default(false)
-  careerPagePublic    Boolean   @default(true)
-  defaultHiringStage  String    @default("Applied")
-
-  ownerId      String
-  owner        User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  deletedAt    DateTime?
+enum HRStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
 }

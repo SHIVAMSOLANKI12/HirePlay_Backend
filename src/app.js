@@ -7,6 +7,7 @@ import path from "path";
 import { errorHandler } from "./middleware/error.middleware.js";
 import authModule from "./modules/auth/auth.module.js";
 import companyModule from "./modules/company/company.module.js";
+import hrModule from "./modules/hr/hr.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -37,6 +38,7 @@ app.get("/", (req, res) => {
 // Routes
 authModule(app);
 companyModule(app);
+hrModule(app);
 
 // Error handler should always be last
 app.use(errorHandler);
