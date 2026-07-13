@@ -9,6 +9,8 @@ import authModule from "./modules/auth/auth.module.js";
 import companyModule from "./modules/company/company.module.js";
 import hrModule from "./modules/hr/hr.module.js";
 import jobModule from "./modules/job/job.module.js";
+import candidateModule from "./modules/candidate/candidate.module.js";
+import resumeModule from "./modules/resume/resume.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -41,6 +43,8 @@ authModule(app);
 companyModule(app);
 hrModule(app);
 jobModule(app);
+candidateModule(app);
+resumeModule(app);
 
 // Error handler should always be last
 app.use(errorHandler);

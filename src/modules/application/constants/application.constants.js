@@ -1,0 +1,5 @@
+export const WITHDRAW_ALLOWED_STATUSES = [
+  "APPLIED",
+  "SCREENING",
+  "SHORTLISTED",
+];

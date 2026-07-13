@@ -17,6 +17,8 @@ model User {
   updatedAt     DateTime       @updatedAt
   company       Company[]
   refreshTokens RefreshToken[]
+  applications  Application[]
+  resumes       Resume[]
 }
 
 model RefreshToken {
@@ -118,12 +120,15 @@ model Job {
   benefits        String?
   status          JobStatus      @default(DRAFT)
   publishedAt     DateTime?
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  deletedAt       DateTime?
+  applicationDeadline DateTime?
 
-  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications Application[]
 }
 
 enum JobStatus {
@@ -145,4 +150,63 @@ enum WorkMode {
   ONSITE
   REMOTE
   HYBRID
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  candidateId String
+  jobId       String
+  resumeId    String?
+  status      ApplicationStatus @default(APPLIED)
+  resumeUrl   String?
+  coverLetter String?
+  appliedAt   DateTime          @default(now())
+  withdrawnAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  candidate User   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job       Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume    Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  @@unique([candidateId, jobId])
+  @@index([candidateId])
+  @@index([jobId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SCREENING
+  SHORTLISTED
+  INTERVIEW
+  OFFERED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+model Resume {
+  id           String    @id @default(uuid())
+  candidateId  String
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int
+  storageKey   String    @unique
+  fileUrl      String
+  isActive     Boolean   @default(true)
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  candidate    User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([candidateId])
+  @@index([isActive])
 }

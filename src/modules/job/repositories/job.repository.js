@@ -51,6 +51,25 @@ export const findJobById = async (companyId, jobId) => {
   });
 };
 
+export const findPublishedJob = async (jobId) => {
+  return prisma.job.findFirst({
+    where: {
+      id: jobId,
+      deletedAt: null,
+      status: "PUBLISHED",
+    },
+  });
+};
+
+export const findJobByIdForCandidate = async (jobId) => {
+  return prisma.job.findFirst({
+    where: {
+      id: jobId,
+      deletedAt: null,
+    },
+  });
+};
+
 export const updateJob = async (jobId, data) => {
   return prisma.job.update({
     where: { id: jobId },

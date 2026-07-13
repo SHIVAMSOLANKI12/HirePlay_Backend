@@ -7,6 +7,7 @@ import { getJobByIdController } from "../controllers/getJobById.controller.js";
 import { updateJobController } from "../controllers/updateJob.controller.js";
 import { softDeleteJobController } from "../controllers/softDeleteJob.controller.js";
 import { publishJobController, unpublishJobController, closeJobController, reopenJobController } from "../controllers/jobActions.controller.js";
+import { applyToJobController } from "../../application/controllers/applyToJob.controller.js";
 
 const router = Router();
 
@@ -30,5 +31,8 @@ router.patch("/:id/publish", requireAuth, requireRole("COMPANY_ADMIN", "HR"), pu
 router.patch("/:id/unpublish", requireAuth, requireRole("COMPANY_ADMIN", "HR"), unpublishJobController);
 router.patch("/:id/close", requireAuth, requireRole("COMPANY_ADMIN", "HR"), closeJobController);
 router.patch("/:id/reopen", requireAuth, requireRole("COMPANY_ADMIN", "HR"), reopenJobController);
+
+// Candidate Actions
+router.post("/:jobId/apply", requireAuth, requireRole("CANDIDATE"), applyToJobController);
 
 export default router;
