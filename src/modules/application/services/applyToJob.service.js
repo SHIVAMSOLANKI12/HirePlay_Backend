@@ -2,6 +2,9 @@ import AppError from "../../../utils/AppError.js";
 import { findJobByIdForCandidate } from "../../job/repositories/job.repository.js";
 import { findExistingApplication, createApplication } from "../repositories/application.repository.js";
 import { findResumeById } from "../../resume/repositories/resume.repository.js";
+import { verifyCandidateOwnership } from "../../shared/services/verifyCandidateOwnership.service.js";
+import { logApplicationActivity } from "../../activity/services/activity.service.js";
+import prisma from "../../../config/prisma.js";
 
 export const applyToJob = async (candidateId, jobId, applicationData) => {
   // Fetch Job
@@ -28,14 +31,7 @@ export const applyToJob = async (candidateId, jobId, applicationData) => {
   }
 
   // Validate Resume
-  const resume = await findResumeById(applicationData.resumeId);
-  if (!resume) {
-    throw new AppError("Invalid Resume", 404);
-  }
-  
-  if (resume.candidateId !== candidateId) {
-    throw new AppError("Resume belongs to another candidate", 403);
-  }
+  const resume = await verifyCandidateOwnership(applicationData.resumeId, candidateId, findResumeById, "Resume");
 
   if (!resume.isActive || resume.deletedAt) {
     throw new AppError("Invalid Resume", 404);
@@ -50,7 +46,24 @@ export const applyToJob = async (candidateId, jobId, applicationData) => {
     status: "APPLIED",
   };
 
-  const newApplication = await createApplication(data);
+  // Run Application Creation and Activity Logging in a transaction
+  const newApplication = await prisma.$transaction(async (tx) => {
+    const app = await createApplication(data, tx);
+
+    await logApplicationActivity({
+      applicationId: app.id,
+      performedBy: candidateId,
+      action: "APPLICATION_CREATED",
+      newStatus: "APPLIED",
+      metadata: {
+        jobId,
+        candidateId,
+        resumeId: applicationData.resumeId,
+      },
+    }, tx);
+
+    return app;
+  });
 
   return {
     applicationId: newApplication.id,

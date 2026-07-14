@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { uuidSchema } from "../../shared/validators/uuid.validator.js";
 
 export const applyToJobParamsSchema = z.object({
-  jobId: z.string().uuid("Invalid Job ID"),
+  jobId: uuidSchema("Invalid Job ID"),
 });
 
 export const applyToJobBodySchema = z.object({
-  resumeId: z.string().uuid("Invalid Resume ID"),
-  coverLetter: z.string().trim().optional(),
+  resumeId: uuidSchema("Invalid Resume ID"),
+  coverLetter: z.string().max(2000, "Cover letter too long").optional(),
 });

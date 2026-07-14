@@ -1,5 +1,6 @@
 import { z } from "zod";
+import { uuidSchema } from "../../shared/validators/uuid.validator.js";
 
 export const getApplicationByIdParamsSchema = z.object({
-  applicationId: z.string().uuid("Invalid Application ID"),
+  applicationId: uuidSchema("Invalid Application ID"),
 });

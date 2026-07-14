@@ -1,28 +1,10 @@
 import AppError from "../../../utils/AppError.js";
-import { findCompanyByOwnerId } from "../../company/repositories/company.repository.js";
-import { findJobById, updateJob } from "../repositories/job.repository.js";
+import { updateJob } from "../repositories/job.repository.js";
+import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
 import JobDTO from "../dto/job.dto.js";
 
 export const updateJobService = async (user, jobId, payload) => {
-  let companyId = user.companyId;
-
-  // If companyId is not in JWT (e.g., Company Admin / Owner), fetch it
-  if (!companyId && user.role === "COMPANY_ADMIN") {
-    const existingCompany = await findCompanyByOwnerId(user.id);
-    if (existingCompany) {
-      companyId = existingCompany.id;
-    }
-  }
-
-  if (!companyId) {
-    throw new AppError("Company not found. You must belong to a company to update jobs.", 404);
-  }
-
-  const existingJob = await findJobById(companyId, jobId);
-
-  if (!existingJob) {
-    throw new AppError("Job not found or belongs to another company.", 404);
-  }
+  const existingJob = await verifyRecruiterJobAccess(user, jobId);
 
   const dataToUpdate = { ...payload };
 

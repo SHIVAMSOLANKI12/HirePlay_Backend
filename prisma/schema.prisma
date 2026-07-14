@@ -19,6 +19,8 @@ model User {
   refreshTokens RefreshToken[]
   applications  Application[]
   resumes       Resume[]
+  activities    ApplicationActivity[]
+  applicationNotes ApplicationNote[]
 }
 
 model RefreshToken {
@@ -170,6 +172,8 @@ model Application {
   candidate User   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   job       Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
   resume    Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  activities ApplicationActivity[]
+  notes      ApplicationNote[]
 
   @@unique([candidateId, jobId])
   @@index([candidateId])
@@ -209,4 +213,61 @@ model Resume {
 
   @@index([candidateId])
   @@index([isActive])
+}
+
+enum ApplicationActivityAction {
+  APPLICATION_CREATED
+  APPLICATION_WITHDRAWN
+  STATUS_CHANGED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_RESCHEDULED
+  INTERVIEW_CANCELLED
+  INTERVIEW_COMPLETED
+  OFFER_SENT
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  APPLICATION_REJECTED
+  APPLICATION_HIRED
+  NOTE_ADDED
+  RESUME_UPDATED
+  PROFILE_UPDATED
+}
+
+model ApplicationActivity {
+  id            String                    @id @default(uuid())
+  applicationId String
+  performedBy   String
+  action        ApplicationActivityAction
+  oldStatus     ApplicationStatus?
+  newStatus     ApplicationStatus?
+  metadata      Json?
+  
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  deletedAt     DateTime?
+
+  application   Application               @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user          User                      @relation(fields: [performedBy], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([performedBy])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model ApplicationNote {
+  id            String      @id @default(uuid())
+  applicationId String
+  authorId      String
+  note          String
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  author        User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([authorId])
+  @@index([createdAt])
 }

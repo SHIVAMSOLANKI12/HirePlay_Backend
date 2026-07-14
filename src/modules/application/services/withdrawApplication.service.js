@@ -1,22 +1,43 @@
 import AppError from "../../../utils/AppError.js";
 import { findApplicationByIdAndCandidateId, withdrawApplication } from "../repositories/application.repository.js";
-import { WITHDRAW_ALLOWED_STATUSES } from "../constants/application.constants.js";
+import { isTransitionAllowed } from "../../shared/services/applicationStatusTransition.service.js";
+import { verifyCandidateOwnership } from "../../shared/services/verifyCandidateOwnership.service.js";
+import { logApplicationActivity } from "../../activity/services/activity.service.js";
+import prisma from "../../../config/prisma.js";
+
+// We need a raw fetcher without the candidate filter to use verifyCandidateOwnership.
+// But since verifyCandidateOwnership takes a fetchFn, we can provide one inline.
+const fetchApplicationForOwnership = async (id) => {
+  return prisma.application.findUnique({ where: { id } });
+};
 
 export const withdrawApplicationService = async (applicationId, candidateId) => {
   // 1. Fetch application and ensure it belongs to the candidate
-  const application = await findApplicationByIdAndCandidateId(applicationId, candidateId);
-
-  if (!application) {
-    throw new AppError("Application not found", 404);
-  }
+  const application = await verifyCandidateOwnership(
+    applicationId,
+    candidateId,
+    fetchApplicationForOwnership,
+    "Application"
+  );
 
   // 2. Check if the status allows withdrawal
-  if (!WITHDRAW_ALLOWED_STATUSES.includes(application.status)) {
-    throw new AppError("Application cannot be withdrawn at the current stage.", 409);
-  }
+  isTransitionAllowed(application.status, "WITHDRAWN");
 
-  // 3. Perform withdrawal
-  const updatedApplication = await withdrawApplication(applicationId);
+  // 3. Perform withdrawal & logging in a transaction
+  const updatedApplication = await prisma.$transaction(async (tx) => {
+    const app = await withdrawApplication(applicationId, tx);
+
+    await logApplicationActivity({
+      applicationId: app.id,
+      performedBy: candidateId,
+      action: "APPLICATION_WITHDRAWN",
+      oldStatus: application.status,
+      newStatus: "WITHDRAWN",
+      metadata: { reason: "Candidate withdrew application" },
+    }, tx);
+
+    return app;
+  });
 
   return updatedApplication;
 };

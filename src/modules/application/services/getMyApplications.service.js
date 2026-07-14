@@ -1,36 +1,41 @@
 import { findApplicationsByCandidateId } from "../repositories/application.repository.js";
+import { getPaginationOptions, getPaginationMetadata } from "../../shared/services/pagination.service.js";
+import { buildSearchCondition } from "../../shared/services/search.service.js";
+import { getSortingOptions } from "../../shared/services/sorting.service.js";
+import { toList, toSummary } from "../../shared/mappers/application.mapper.js";
 
 export const getMyApplicationsService = async (candidateId, queryParams) => {
   const {
-    page = 1,
-    limit = 10,
-    status,
-    search,
-    sortBy = "appliedAt",
-    sortOrder = "desc",
-  } = queryParams;
-
-  const parsedPage = parseInt(page, 10) > 0 ? parseInt(page, 10) : 1;
-  const parsedLimit = parseInt(limit, 10) > 0 ? parseInt(limit, 10) : 10;
-
-  const { items, totalCount } = await findApplicationsByCandidateId(candidateId, {
-    page: parsedPage,
-    limit: parsedLimit,
+    page,
+    limit,
     status,
     search,
     sortBy,
     sortOrder,
+  } = queryParams;
+
+  const { page: parsedPage, limit: parsedLimit, skip, take } = getPaginationOptions(page, limit);
+  const orderBy = getSortingOptions(sortBy, sortOrder, ["appliedAt", "status"], "appliedAt");
+  const searchCondition = buildSearchCondition(search, ["job.title"]);
+
+  const where = {
+    candidateId,
+    deletedAt: null,
+    ...(status ? { status } : {}),
+    ...(searchCondition ? { ...searchCondition } : {}),
+  };
+
+  const { items, totalCount } = await findApplicationsByCandidateId({
+    where,
+    skip,
+    take,
+    orderBy,
   });
 
-  const totalPages = Math.ceil(totalCount / parsedLimit);
+  const pagination = getPaginationMetadata(totalCount, parsedPage, parsedLimit);
 
   return {
-    applications: items,
-    pagination: {
-      page: parsedPage,
-      limit: parsedLimit,
-      total: totalCount,
-      totalPages,
-    },
+    applications: toList(items, toSummary),
+    pagination,
   };
 };

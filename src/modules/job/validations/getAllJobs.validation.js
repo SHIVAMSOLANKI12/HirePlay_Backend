@@ -1,11 +1,20 @@
 import { z } from "zod";
+import { paginationSchema } from "../../shared/validators/pagination.validator.js";
+import { searchSchema } from "../../shared/validators/search.validator.js";
+import { sortSchema } from "../../shared/validators/sort.validator.js";
+import { JOB_STATUS } from "../../shared/constants/job.constants.js";
 
-export const getAllJobsQuerySchema = z.object({
-  page: z.coerce.number().int().min(1, "Page must be at least 1").default(1),
-  limit: z.coerce.number().int().min(1, "Limit must be at least 1").max(100, "Limit cannot exceed 100").default(10),
-  search: z.string().trim().optional(),
-  status: z.enum(["DRAFT", "PUBLISHED", "CLOSED", "ARCHIVED"]).optional(),
+const jobSpecificQuerySchema = z.object({
+  status: z.enum([JOB_STATUS.DRAFT, JOB_STATUS.PUBLISHED, JOB_STATUS.CLOSED, JOB_STATUS.ARCHIVED]).optional(),
   employmentType: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "FREELANCE"]).optional(),
-  sortBy: z.enum(["createdAt", "title", "status"]).default("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
+
+const jobSortSchema = z.object({
+  sortBy: z.enum(["createdAt", "title", "status"]).default("createdAt"),
+});
+
+export const getAllJobsQuerySchema = paginationSchema
+  .merge(searchSchema)
+  .merge(sortSchema)
+  .merge(jobSortSchema)
+  .merge(jobSpecificQuerySchema);

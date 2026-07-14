@@ -11,6 +11,7 @@ import hrModule from "./modules/hr/hr.module.js";
 import jobModule from "./modules/job/job.module.js";
 import candidateModule from "./modules/candidate/candidate.module.js";
 import resumeModule from "./modules/resume/resume.module.js";
+import applicationModule from "./modules/application/application.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -45,6 +46,7 @@ hrModule(app);
 jobModule(app);
 candidateModule(app);
 resumeModule(app);
+applicationModule(app);
 
 // Error handler should always be last
 app.use(errorHandler);

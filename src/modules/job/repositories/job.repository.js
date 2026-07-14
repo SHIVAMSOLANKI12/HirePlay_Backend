@@ -6,34 +6,13 @@ export const createJob = async (jobData) => {
   });
 };
 
-export const findAllJobs = async (companyId, { page, limit, search, status, employmentType, sortBy, sortOrder }) => {
-  const where = {
-    companyId,
-    deletedAt: null,
-  };
-
-  if (status) {
-    where.status = status;
-  }
-
-  if (employmentType) {
-    where.employmentType = employmentType;
-  }
-
-  if (search) {
-    where.title = { contains: search, mode: "insensitive" };
-  }
-
-  const skip = (page - 1) * limit;
-
+export const findAllJobs = async ({ where, skip, take, orderBy }) => {
   const [items, totalCount] = await prisma.$transaction([
     prisma.job.findMany({
       where,
       skip,
-      take: limit,
-      orderBy: {
-        [sortBy]: sortOrder,
-      },
+      take,
+      orderBy,
     }),
     prisma.job.count({ where }),
   ]);
@@ -62,6 +41,15 @@ export const findPublishedJob = async (jobId) => {
 };
 
 export const findJobByIdForCandidate = async (jobId) => {
+  return prisma.job.findFirst({
+    where: {
+      id: jobId,
+      deletedAt: null,
+    },
+  });
+};
+
+export const findActiveJobById = async (jobId) => {
   return prisma.job.findFirst({
     where: {
       id: jobId,
