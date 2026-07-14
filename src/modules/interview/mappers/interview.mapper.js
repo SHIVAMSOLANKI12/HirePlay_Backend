@@ -45,5 +45,27 @@ export const toInterviewDTO = (interview) => {
       id: interview.scheduledBy.id,
       name: interview.scheduledBy.name,
     } : undefined,
+
+    // Multi-round specific fields
+    roundNumber: interview.roundNumber,
+    roundName: interview.roundName,
+    parentInterviewId: interview.parentInterviewId,
+    sequence: interview.sequence,
+    isFinalRound: interview.isFinalRound,
+    completedAt: interview.completedAt,
+  };
+};
+
+/**
+ * Formats an entire interview process including all its rounds.
+ */
+export const toInterviewProcessDTO = (process) => {
+  if (!process) return null;
+
+  const baseDTO = toInterviewDTO(process);
+  
+  return {
+    ...baseDTO,
+    rounds: process.childRounds ? process.childRounds.map(toInterviewDTO) : [],
   };
 };
