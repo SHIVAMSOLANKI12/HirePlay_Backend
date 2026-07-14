@@ -134,6 +134,10 @@ model Job {
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   applications Application[]
   activityLogs ActivityLog[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 enum JobStatus {

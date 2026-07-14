@@ -8,23 +8,13 @@ import {
 } from "../repositories/dashboard.repository.js";
 import { toRecruiterDashboard } from "../mappers/dashboard.mapper.js";
 
+import { resolveCompanyId } from "../../shared/services/resolveCompanyId.service.js";
+
 /**
  * Service to aggregate recruiter dashboard data
  */
 export const getRecruiterDashboardService = async (user) => {
-  let companyId = user.companyId;
-
-  // Resolve companyId for COMPANY_ADMIN if it's not present directly on user object
-  if (!companyId && user.role === "COMPANY_ADMIN") {
-    const existingCompany = await findCompanyByOwnerId(user.id);
-    if (existingCompany) {
-      companyId = existingCompany.id;
-    }
-  }
-
-  if (!companyId) {
-    throw new AppError("Company not found for the user", 404);
-  }
+  const companyId = await resolveCompanyId(user);
 
   // Execute all four queries concurrently for maximum database throughput
   const [jobStats, appStats, recentJobs, recentApps] = await Promise.all([

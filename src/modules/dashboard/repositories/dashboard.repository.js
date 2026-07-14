@@ -3,7 +3,7 @@ import prisma from "../../../config/prisma.js";
 /**
  * Groups and counts the candidate's applications by status.
  */
-export const getApplicationCounts = async (candidateId) => {
+export const getApplicationCounts = async (candidateId, options = { cache: true }) => {
   // Use _count: { _all: true } to avoid ambiguous "id" column in PostgreSQL
   const result = await prisma.application.groupBy({
     by: ['status'],
@@ -28,7 +28,7 @@ export const getApplicationCounts = async (candidateId) => {
 /**
  * Fetches the 5 most recent applications for the candidate with job/company details.
  */
-export const getRecentApplications = async (candidateId) => {
+export const getRecentApplications = async (candidateId, options = { cache: false }) => {
   return prisma.application.findMany({
     where: {
       candidateId,
@@ -62,7 +62,7 @@ export const getRecentApplications = async (candidateId) => {
 /**
  * Groups and counts the company's jobs by status.
  */
-export const getJobStatistics = async (companyId) => {
+export const getJobStatistics = async (companyId, options = { cache: true }) => {
   // Use _count: { _all: true } to avoid ambiguous "id" column in PostgreSQL
   const result = await prisma.job.groupBy({
     by: ['status'],
@@ -87,7 +87,7 @@ export const getJobStatistics = async (companyId) => {
 /**
  * Groups and counts the company's applications by status.
  */
-export const getCompanyApplicationStatistics = async (companyId) => {
+export const getCompanyApplicationStatistics = async (companyId, options = { cache: true }) => {
   // Use _count: { _all: true } to avoid ambiguous "id" column in PostgreSQL
   // This explicitly fixes the code: 42702 PostgreSQL error caused by relation joins in groupBy
   const result = await prisma.application.groupBy({
@@ -115,7 +115,7 @@ export const getCompanyApplicationStatistics = async (companyId) => {
 /**
  * Fetches the 5 most recent jobs for the company.
  */
-export const getRecentJobs = async (companyId) => {
+export const getRecentJobs = async (companyId, options = { cache: false }) => {
   return prisma.job.findMany({
     where: {
       companyId,
@@ -137,7 +137,7 @@ export const getRecentJobs = async (companyId) => {
 /**
  * Fetches the 5 most recent applications received across all company jobs.
  */
-export const getRecentCompanyApplications = async (companyId) => {
+export const getRecentCompanyApplications = async (companyId, options = { cache: false }) => {
   return prisma.application.findMany({
     where: {
       job: {
@@ -172,7 +172,7 @@ export const getRecentCompanyApplications = async (companyId) => {
 /**
  * Fetches application timestamps for a specific year to calculate monthly metrics.
  */
-export const getMonthlyApplications = async (companyId, year) => {
+export const getMonthlyApplications = async (companyId, year, options = { cache: true }) => {
   const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
   const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
@@ -196,7 +196,7 @@ export const getMonthlyApplications = async (companyId, year) => {
 /**
  * Fetches job timestamps for a specific year to calculate monthly metrics.
  */
-export const getMonthlyJobs = async (companyId, year) => {
+export const getMonthlyJobs = async (companyId, year, options = { cache: true }) => {
   const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
   const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
 
@@ -218,7 +218,7 @@ export const getMonthlyJobs = async (companyId, year) => {
 /**
  * Fetches recent activities for a Candidate.
  */
-export const getCandidateActivities = async (candidateId) => {
+export const getCandidateActivities = async (candidateId, options = { cache: false }) => {
   return prisma.activityLog.findMany({
     where: {
       userId: candidateId,
@@ -253,7 +253,7 @@ export const getCandidateActivities = async (candidateId) => {
 /**
  * Fetches recent activities for a Recruiter's Company.
  */
-export const getRecruiterActivities = async (companyId) => {
+export const getRecruiterActivities = async (companyId, options = { cache: false }) => {
   return prisma.activityLog.findMany({
     where: {
       companyId,

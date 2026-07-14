@@ -1,6 +1,21 @@
 import { APPLICATION_STATUS } from "../../shared/constants/applicationStatus.constants.js";
 
 /**
+ * Helper to map raw count aggregates into a standardized dictionary.
+ */
+const countByStatus = (statsArray) => {
+  const counts = {};
+  let total = 0;
+  statsArray.forEach((group) => {
+    const status = group.status;
+    const count = group._count.id;
+    counts[status] = count;
+    total += count;
+  });
+  return { counts, total };
+};
+
+/**
  * Transforms grouped status counts and recent applications into a standardized Candidate Dashboard DTO.
  */
 export const toCandidateDashboard = (statusCounts, recentApps) => {
@@ -14,38 +29,20 @@ export const toCandidateDashboard = (statusCounts, recentApps) => {
   };
 
   // Map raw grouped counts into overview structure
-  statusCounts.forEach((group) => {
-    const status = group.status;
-    const count = group._count.id;
-    
-    overview.totalApplications += count;
-
-    if (
-      status === APPLICATION_STATUS.APPLIED ||
-      status === APPLICATION_STATUS.SCREENING ||
-      status === APPLICATION_STATUS.SHORTLISTED ||
-      status === APPLICATION_STATUS.INTERVIEW ||
-      status === APPLICATION_STATUS.OFFERED
-    ) {
-      overview.activeApplications += count;
-    }
-
-    if (status === APPLICATION_STATUS.INTERVIEW) {
-      overview.interviewInvites += count;
-    }
-
-    if (status === APPLICATION_STATUS.OFFERED) {
-      overview.offersReceived += count;
-    }
-
-    if (status === APPLICATION_STATUS.REJECTED) {
-      overview.rejectedApplications += count;
-    }
-
-    if (status === APPLICATION_STATUS.WITHDRAWN) {
-      overview.withdrawnApplications += count;
-    }
-  });
+  const { counts, total } = countByStatus(statusCounts);
+  
+  overview.totalApplications = total;
+  overview.activeApplications = 
+    (counts[APPLICATION_STATUS.APPLIED] || 0) +
+    (counts[APPLICATION_STATUS.SCREENING] || 0) +
+    (counts[APPLICATION_STATUS.SHORTLISTED] || 0) +
+    (counts[APPLICATION_STATUS.INTERVIEW] || 0) +
+    (counts[APPLICATION_STATUS.OFFERED] || 0);
+  
+  overview.interviewInvites = counts[APPLICATION_STATUS.INTERVIEW] || 0;
+  overview.offersReceived = counts[APPLICATION_STATUS.OFFERED] || 0;
+  overview.rejectedApplications = counts[APPLICATION_STATUS.REJECTED] || 0;
+  overview.withdrawnApplications = counts[APPLICATION_STATUS.WITHDRAWN] || 0;
 
   const recentApplications = recentApps.map((app) => ({
     id: app.id,
@@ -90,30 +87,20 @@ export const toRecruiterDashboard = (jobStats, appStats, recentJobsRaw, recentAp
   };
 
   // 1. Map Job Stats
-  jobStats.forEach((group) => {
-    const status = group.status;
-    const count = group._count.id;
-
-    overview.totalJobs += count;
-
-    if (status === "PUBLISHED") overview.activeJobs += count;
-    if (status === "CLOSED") overview.closedJobs += count;
-    if (status === "DRAFT") overview.draftJobs += count;
-  });
+  const { counts: jobCounts, total: totalJobs } = countByStatus(jobStats);
+  overview.totalJobs = totalJobs;
+  overview.activeJobs = jobCounts["PUBLISHED"] || 0;
+  overview.closedJobs = jobCounts["CLOSED"] || 0;
+  overview.draftJobs = jobCounts["DRAFT"] || 0;
 
   // 2. Map Application Stats
-  appStats.forEach((group) => {
-    const status = group.status;
-    const count = group._count.id;
-
-    overview.totalApplicants += count;
-
-    if (status === APPLICATION_STATUS.SHORTLISTED) overview.shortlistedApplicants += count;
-    if (status === APPLICATION_STATUS.REJECTED) overview.rejectedApplicants += count;
-    if (status === APPLICATION_STATUS.INTERVIEW) overview.interviewScheduled += count;
-    if (status === APPLICATION_STATUS.OFFERED) overview.offersSent += count;
-    if (status === APPLICATION_STATUS.HIRED) overview.hiredCandidates += count;
-  });
+  const { counts: appCounts, total: totalApplicants } = countByStatus(appStats);
+  overview.totalApplicants = totalApplicants;
+  overview.shortlistedApplicants = appCounts[APPLICATION_STATUS.SHORTLISTED] || 0;
+  overview.rejectedApplicants = appCounts[APPLICATION_STATUS.REJECTED] || 0;
+  overview.interviewScheduled = appCounts[APPLICATION_STATUS.INTERVIEW] || 0;
+  overview.offersSent = appCounts[APPLICATION_STATUS.OFFERED] || 0;
+  overview.hiredCandidates = appCounts[APPLICATION_STATUS.HIRED] || 0;
 
   // 3. Map Recent Jobs
   const recentJobs = recentJobsRaw.map((job) => ({
@@ -149,20 +136,13 @@ export const toRecruiterDashboard = (jobStats, appStats, recentJobsRaw, recentAp
   };
 };
 
+
+
 /**
  * Transforms grouped stats into the Hiring Funnel Analytics DTO.
  */
 export const toHiringFunnel = (appStats) => {
-  let totalApplications = 0;
-
-  // Track raw counts by Prisma status
-  const rawCounts = {};
-  appStats.forEach((group) => {
-    const status = group.status;
-    const count = group._count.id;
-    rawCounts[status] = count;
-    totalApplications += count;
-  });
+  const { counts: rawCounts, total: totalApplications } = countByStatus(appStats);
 
   // Map requested funnel stages to Prisma statuses
   const funnelStages = [
