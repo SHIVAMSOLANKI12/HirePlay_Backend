@@ -148,3 +148,53 @@ export const toRecruiterDashboard = (jobStats, appStats, recentJobsRaw, recentAp
     recentApplications,
   };
 };
+
+/**
+ * Transforms grouped stats into the Hiring Funnel Analytics DTO.
+ */
+export const toHiringFunnel = (appStats) => {
+  let totalApplications = 0;
+
+  // Track raw counts by Prisma status
+  const rawCounts = {};
+  appStats.forEach((group) => {
+    const status = group.status;
+    const count = group._count.id;
+    rawCounts[status] = count;
+    totalApplications += count;
+  });
+
+  // Map requested funnel stages to Prisma statuses
+  const funnelStages = [
+    { display: "APPLIED", prisma: APPLICATION_STATUS.APPLIED },
+    { display: "REVIEWED", prisma: APPLICATION_STATUS.SCREENING },
+    { display: "SHORTLISTED", prisma: APPLICATION_STATUS.SHORTLISTED },
+    { display: "INTERVIEW_SCHEDULED", prisma: APPLICATION_STATUS.INTERVIEW },
+    { display: "OFFER_SENT", prisma: APPLICATION_STATUS.OFFERED },
+    { display: "HIRED", prisma: APPLICATION_STATUS.HIRED },
+    { display: "REJECTED", prisma: APPLICATION_STATUS.REJECTED },
+    { display: "WITHDRAWN", prisma: APPLICATION_STATUS.WITHDRAWN },
+  ];
+
+  const funnel = funnelStages.map((stage) => {
+    const count = rawCounts[stage.prisma] || 0;
+    
+    let percentage = 0;
+    if (totalApplications > 0) {
+      percentage = Number(((count / totalApplications) * 100).toFixed(2));
+    }
+
+    return {
+      stage: stage.display,
+      count,
+      percentage,
+    };
+  });
+
+  return {
+    summary: {
+      totalApplications,
+    },
+    funnel,
+  };
+};
