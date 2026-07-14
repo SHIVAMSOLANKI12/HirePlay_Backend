@@ -247,6 +247,7 @@ enum ApplicationActivityAction {
   RESUME_UPDATED
   PROFILE_UPDATED
   INTERVIEW_FEEDBACK_SUBMITTED
+  INTERVIEW_DECISION_UPDATED
 }
 
 model ApplicationActivity {
@@ -327,6 +328,7 @@ enum ActivityType {
   JOB_CLOSED
   INTERVIEW_FEEDBACK_SUBMITTED
   INTERVIEW_CANCELLED
+  INTERVIEW_DECISION_UPDATED
 }
 
 enum InterviewType {
@@ -341,6 +343,14 @@ enum InterviewStatus {
   COMPLETED
   CANCELLED
   RESCHEDULED
+}
+
+enum InterviewDecision {
+  PENDING
+  NEXT_ROUND
+  SELECTED
+  REJECTED
+  ON_HOLD
 }
 
 model Interview {
@@ -367,6 +377,9 @@ model Interview {
   sequence        Int             @default(1)
   isFinalRound    Boolean         @default(false)
   completedAt     DateTime?
+  
+  decision        InterviewDecision @default(PENDING)
+  decisionNotes   String?
 
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt

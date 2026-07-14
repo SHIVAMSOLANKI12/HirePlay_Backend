@@ -5,6 +5,7 @@ import { requireAuth } from "../../../middleware/requireAuth.middleware.js";
 import { requireRole } from "../../../middleware/requireRole.middleware.js";
 import { submitFeedback, updateFeedback, getInterviewFeedbacks } from "../controllers/feedback.controller.js";
 import { rescheduleInterview, cancelInterview, getInterviewHistory } from "../controllers/lifecycle.controller.js";
+import { getInterviewTimeline, getInterviewDecision, updateInterviewDecision } from "../controllers/decision.controller.js";
 
 const router = express.Router();
 
@@ -76,6 +77,28 @@ router.get(
   requireAuth,
   requireRole("COMPANY_ADMIN", "HR"),
   getInterviewHistory
+);
+
+// Decision & Timeline Routes
+router.get(
+  "/:interviewId/timeline",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  getInterviewTimeline
+);
+
+router.get(
+  "/:interviewId/decision",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  getInterviewDecision
+);
+
+router.patch(
+  "/:interviewId/decision",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  updateInterviewDecision
 );
 
 export default router;
