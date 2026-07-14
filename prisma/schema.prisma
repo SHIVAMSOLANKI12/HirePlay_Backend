@@ -22,6 +22,8 @@ model User {
   activities    ApplicationActivity[]
   applicationNotes ApplicationNote[]
   activityLogs  ActivityLog[]
+  candidateInterviews Interview[] @relation("CandidateInterviews")
+  scheduledInterviews Interview[] @relation("ScheduledInterviews")
 }
 
 model RefreshToken {
@@ -65,6 +67,7 @@ model Company {
   hrs                HR[]
   jobs               Job[]
   activityLogs       ActivityLog[]
+  interviews         Interview[]
 }
 
 model HR {
@@ -134,6 +137,7 @@ model Job {
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   applications Application[]
   activityLogs ActivityLog[]
+  interviews   Interview[]
 
   @@index([companyId])
   @@index([status])
@@ -182,6 +186,7 @@ model Application {
   activities ApplicationActivity[]
   notes      ApplicationNote[]
   activityLogs ActivityLog[]
+  interviews   Interview[]
 
   @@unique([candidateId, jobId])
   @@index([candidateId])
@@ -317,4 +322,51 @@ enum ActivityType {
   JOB_CREATED
   JOB_UPDATED
   JOB_CLOSED
+}
+
+enum InterviewType {
+  ONLINE
+  OFFLINE
+  PHONE
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+model Interview {
+  id              String          @id @default(uuid())
+  applicationId   String
+  companyId       String
+  candidateId     String
+  jobId           String
+  scheduledById   String
+  title           String
+  description     String?
+  type            InterviewType
+  status          InterviewStatus @default(SCHEDULED)
+  scheduledAt     DateTime
+  durationMinutes Int
+  timezone        String
+  meetingLink     String?
+  location        String?
+  notes           String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  candidate       User            @relation("CandidateInterviews", fields: [candidateId], references: [id], onDelete: Cascade)
+  job             Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  scheduledBy     User            @relation("ScheduledInterviews", fields: [scheduledById], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+  @@index([companyId])
+  @@index([candidateId])
+  @@index([jobId])
+  @@index([scheduledAt])
 }
