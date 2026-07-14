@@ -3,6 +3,7 @@ import { scheduleInterview } from "../controllers/scheduleInterview.controller.j
 import { scheduleRound, getInterviewRounds, getApplicationInterviews } from "../controllers/multiRound.controller.js";
 import { requireAuth } from "../../../middleware/requireAuth.middleware.js";
 import { requireRole } from "../../../middleware/requireRole.middleware.js";
+import { submitFeedback, updateFeedback, getInterviewFeedbacks } from "../controllers/feedback.controller.js";
 
 const router = express.Router();
 
@@ -32,5 +33,26 @@ router.get(
 // the prefix of this router is `/api/v1/interviews`, I should handle this correctly.
 // I will mount a router on the root app or just add it to application routes.
 
-export default router;
+// Feedback Routes
+router.post(
+  "/:interviewId/feedback",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  submitFeedback
+);
 
+router.patch(
+  "/:interviewId/feedback",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  updateFeedback
+);
+
+router.get(
+  "/:interviewId/feedback",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  getInterviewFeedbacks
+);
+
+export default router;

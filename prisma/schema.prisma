@@ -24,6 +24,7 @@ model User {
   activityLogs  ActivityLog[]
   candidateInterviews Interview[] @relation("CandidateInterviews")
   scheduledInterviews Interview[] @relation("ScheduledInterviews")
+  interviewFeedbacks  InterviewFeedback[]
 }
 
 model RefreshToken {
@@ -244,6 +245,7 @@ enum ApplicationActivityAction {
   NOTE_ADDED
   RESUME_UPDATED
   PROFILE_UPDATED
+  INTERVIEW_FEEDBACK_SUBMITTED
 }
 
 model ApplicationActivity {
@@ -322,6 +324,7 @@ enum ActivityType {
   JOB_CREATED
   JOB_UPDATED
   JOB_CLOSED
+  INTERVIEW_FEEDBACK_SUBMITTED
 }
 
 enum InterviewType {
@@ -373,6 +376,7 @@ model Interview {
   scheduledBy     User            @relation("ScheduledInterviews", fields: [scheduledById], references: [id], onDelete: SetNull)
   parentInterview Interview?      @relation("InterviewRounds", fields: [parentInterviewId], references: [id], onDelete: Cascade)
   childRounds     Interview[]     @relation("InterviewRounds")
+  feedbacks       InterviewFeedback[]
 
   @@index([applicationId])
   @@index([companyId])
@@ -380,4 +384,35 @@ model Interview {
   @@index([jobId])
   @@index([scheduledAt])
   @@index([parentInterviewId])
+}
+
+enum HiringRecommendation {
+  STRONG_HIRE
+  HIRE
+  HOLD
+  NO_HIRE
+}
+
+model InterviewFeedback {
+  id                  String               @id @default(uuid())
+  interviewId         String
+  interviewerId       String
+  overallRating       Float
+  recommendation      HiringRecommendation
+  technicalScore      Int?
+  communicationScore  Int?
+  problemSolvingScore Int?
+  cultureFitScore     Int?
+  strengths           String?
+  weaknesses          String?
+  notes               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  interview           Interview            @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewer         User                 @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, interviewerId])
+  @@index([interviewId])
+  @@index([interviewerId])
 }
