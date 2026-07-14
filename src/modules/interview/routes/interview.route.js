@@ -4,6 +4,7 @@ import { scheduleRound, getInterviewRounds, getApplicationInterviews } from "../
 import { requireAuth } from "../../../middleware/requireAuth.middleware.js";
 import { requireRole } from "../../../middleware/requireRole.middleware.js";
 import { submitFeedback, updateFeedback, getInterviewFeedbacks } from "../controllers/feedback.controller.js";
+import { rescheduleInterview, cancelInterview, getInterviewHistory } from "../controllers/lifecycle.controller.js";
 
 const router = express.Router();
 
@@ -53,6 +54,28 @@ router.get(
   requireAuth,
   requireRole("COMPANY_ADMIN", "HR"),
   getInterviewFeedbacks
+);
+
+// Lifecycle Routes
+router.patch(
+  "/:interviewId/reschedule",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  rescheduleInterview
+);
+
+router.patch(
+  "/:interviewId/cancel",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  cancelInterview
+);
+
+router.get(
+  "/:interviewId/history",
+  requireAuth,
+  requireRole("COMPANY_ADMIN", "HR"),
+  getInterviewHistory
 );
 
 export default router;

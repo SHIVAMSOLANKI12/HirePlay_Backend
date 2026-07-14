@@ -25,6 +25,7 @@ model User {
   candidateInterviews Interview[] @relation("CandidateInterviews")
   scheduledInterviews Interview[] @relation("ScheduledInterviews")
   interviewFeedbacks  InterviewFeedback[]
+  interviewHistories  InterviewHistory[]
 }
 
 model RefreshToken {
@@ -325,6 +326,7 @@ enum ActivityType {
   JOB_UPDATED
   JOB_CLOSED
   INTERVIEW_FEEDBACK_SUBMITTED
+  INTERVIEW_CANCELLED
 }
 
 enum InterviewType {
@@ -377,6 +379,7 @@ model Interview {
   parentInterview Interview?      @relation("InterviewRounds", fields: [parentInterviewId], references: [id], onDelete: Cascade)
   childRounds     Interview[]     @relation("InterviewRounds")
   feedbacks       InterviewFeedback[]
+  history         InterviewHistory[]
 
   @@index([applicationId])
   @@index([companyId])
@@ -415,4 +418,30 @@ model InterviewFeedback {
   @@unique([interviewId, interviewerId])
   @@index([interviewId])
   @@index([interviewerId])
+}
+
+enum InterviewHistoryAction {
+  RESCHEDULED
+  CANCELLED
+  STATUS_CHANGED
+}
+
+model InterviewHistory {
+  id              String                 @id @default(uuid())
+  interviewId     String
+  action          InterviewHistoryAction
+  oldScheduledAt  DateTime?
+  newScheduledAt  DateTime?
+  oldStatus       InterviewStatus?
+  newStatus       InterviewStatus?
+  reason          String
+  performedById   String
+  metadata        Json?
+  createdAt       DateTime               @default(now())
+
+  interview       Interview              @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  performedBy     User                   @relation(fields: [performedById], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
+  @@index([performedById])
 }
