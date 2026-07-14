@@ -198,3 +198,43 @@ export const toHiringFunnel = (appStats) => {
     funnel,
   };
 };
+
+/**
+ * Transforms monthly timestamps and status counts into the Monthly Analytics DTO.
+ */
+export const toMonthlyAnalytics = (year, appsRaw, jobsRaw, statusRaw) => {
+  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+  // Initialize buckets with 0 counts for all 12 months
+  const applicationsByMonth = monthLabels.map(month => ({ month, count: 0 }));
+  const jobsByMonth = monthLabels.map(month => ({ month, count: 0 }));
+
+  // Bucket applications by extracting the 0-indexed month
+  appsRaw.forEach((app) => {
+    if (app.appliedAt) {
+      const monthIndex = app.appliedAt.getMonth();
+      applicationsByMonth[monthIndex].count += 1;
+    }
+  });
+
+  // Bucket jobs by extracting the 0-indexed month
+  jobsRaw.forEach((job) => {
+    if (job.createdAt) {
+      const monthIndex = job.createdAt.getMonth();
+      jobsByMonth[monthIndex].count += 1;
+    }
+  });
+
+  // Map status counts
+  const statusDistribution = statusRaw.map(group => ({
+    status: group.status,
+    count: group._count.id
+  }));
+
+  return {
+    year: Number(year),
+    applicationsByMonth,
+    jobsByMonth,
+    statusDistribution,
+  };
+};

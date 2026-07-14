@@ -168,3 +168,49 @@ export const getRecentCompanyApplications = async (companyId) => {
     },
   });
 };
+
+/**
+ * Fetches application timestamps for a specific year to calculate monthly metrics.
+ */
+export const getMonthlyApplications = async (companyId, year) => {
+  const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
+  const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+
+  return prisma.application.findMany({
+    where: {
+      job: {
+        companyId,
+      },
+      appliedAt: {
+        gte: startDate,
+        lt: endDate,
+      },
+      deletedAt: null,
+    },
+    select: {
+      appliedAt: true,
+    },
+  });
+};
+
+/**
+ * Fetches job timestamps for a specific year to calculate monthly metrics.
+ */
+export const getMonthlyJobs = async (companyId, year) => {
+  const startDate = new Date(`${year}-01-01T00:00:00.000Z`);
+  const endDate = new Date(`${year + 1}-01-01T00:00:00.000Z`);
+
+  return prisma.job.findMany({
+    where: {
+      companyId,
+      createdAt: {
+        gte: startDate,
+        lt: endDate,
+      },
+      deletedAt: null,
+    },
+    select: {
+      createdAt: true,
+    },
+  });
+};
