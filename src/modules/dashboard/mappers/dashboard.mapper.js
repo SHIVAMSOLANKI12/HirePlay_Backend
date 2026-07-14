@@ -238,3 +238,46 @@ export const toMonthlyAnalytics = (year, appsRaw, jobsRaw, statusRaw) => {
     statusDistribution,
   };
 };
+
+/**
+ * Formats activity logs for Candidate Dashboard.
+ */
+export const toCandidateActivityList = (activities) => {
+  return activities.map((activity) => ({
+    id: activity.id,
+    type: activity.type,
+    title: activity.title,
+    description: activity.description,
+    createdAt: activity.createdAt,
+    job: activity.job ? {
+      id: activity.job.id,
+      title: activity.job.title,
+    } : null,
+    company: activity.company ? {
+      id: activity.company.id,
+      name: activity.company.name,
+      logo: activity.company.logo,
+    } : null,
+  }));
+};
+
+/**
+ * Formats activity logs for Recruiter Dashboard.
+ */
+export const toRecruiterActivityList = (activities) => {
+  return activities.map((activity) => ({
+    id: activity.id,
+    type: activity.type,
+    title: activity.title,
+    description: activity.description,
+    createdAt: activity.createdAt,
+    candidate: activity.user ? {
+      id: activity.user.id,
+      name: activity.user.name,
+    } : null,
+    job: activity.job ? {
+      id: activity.job.id,
+      title: activity.job.title,
+    } : null,
+  }));
+};

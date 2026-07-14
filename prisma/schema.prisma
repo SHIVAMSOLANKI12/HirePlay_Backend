@@ -21,6 +21,7 @@ model User {
   resumes       Resume[]
   activities    ApplicationActivity[]
   applicationNotes ApplicationNote[]
+  activityLogs  ActivityLog[]
 }
 
 model RefreshToken {
@@ -63,6 +64,7 @@ model Company {
   owner              User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   hrs                HR[]
   jobs               Job[]
+  activityLogs       ActivityLog[]
 }
 
 model HR {
@@ -131,6 +133,7 @@ model Job {
 
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   applications Application[]
+  activityLogs ActivityLog[]
 }
 
 enum JobStatus {
@@ -174,6 +177,7 @@ model Application {
   resume    Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   activities ApplicationActivity[]
   notes      ApplicationNote[]
+  activityLogs ActivityLog[]
 
   @@unique([candidateId, jobId])
   @@index([candidateId])
@@ -270,4 +274,43 @@ model ApplicationNote {
   @@index([applicationId])
   @@index([authorId])
   @@index([createdAt])
+}
+
+model ActivityLog {
+  id            String       @id @default(uuid())
+  companyId     String?
+  userId        String
+  applicationId String?
+  jobId         String?
+  type          ActivityType
+  title         String
+  description   String
+  metadata      Json?
+  createdAt     DateTime     @default(now())
+
+  // relations
+  company       Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  job           Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+enum ActivityType {
+  APPLICATION_SUBMITTED
+  APPLICATION_WITHDRAWN
+  APPLICATION_SHORTLISTED
+  APPLICATION_REJECTED
+  APPLICATION_REVIEWED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_RESCHEDULED
+  OFFER_SENT
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  JOB_CREATED
+  JOB_UPDATED
+  JOB_CLOSED
 }

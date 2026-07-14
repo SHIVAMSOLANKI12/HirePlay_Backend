@@ -39,3 +39,18 @@ export const getMonthlyAnalyticsController = asyncHandler(async (req, res) => {
     200
   );
 });
+
+export const getRecruiterRecentActivitiesController = asyncHandler(async (req, res) => {
+  // We need to import the service at the top, or just use it here if imported.
+  // Wait, I should import it at the top instead. I'll just do a require here to avoid import issues, or I can run another edit.
+  // I'll run another edit to fix the import.
+  const { getRecruiterRecentActivitiesService } = await import("../services/recentActivity.service.js");
+  const activities = await getRecruiterRecentActivitiesService(req.user);
+
+  return successResponse(
+    res,
+    activities,
+    "Recent activities fetched successfully",
+    200
+  );
+});

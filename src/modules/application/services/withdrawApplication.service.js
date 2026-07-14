@@ -8,7 +8,14 @@ import prisma from "../../../config/prisma.js";
 // We need a raw fetcher without the candidate filter to use verifyCandidateOwnership.
 // But since verifyCandidateOwnership takes a fetchFn, we can provide one inline.
 const fetchApplicationForOwnership = async (id) => {
-  return prisma.application.findUnique({ where: { id } });
+  return prisma.application.findUnique({ 
+    where: { id },
+    include: {
+      job: {
+        select: { companyId: true, title: true }
+      }
+    }
+  });
 };
 
 export const withdrawApplicationService = async (applicationId, candidateId) => {
@@ -34,6 +41,19 @@ export const withdrawApplicationService = async (applicationId, candidateId) => 
       oldStatus: application.status,
       newStatus: "WITHDRAWN",
       metadata: { reason: "Candidate withdrew application" },
+    }, tx);
+
+    // Track reusable ActivityLog for dashboards
+    const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
+    await createActivityLog({
+      userId: candidateId,
+      companyId: application.job.companyId,
+      applicationId: app.id,
+      jobId: application.jobId,
+      type: "APPLICATION_WITHDRAWN",
+      title: "Application Withdrawn",
+      description: `You withdrew your application.`,
+      metadata: null,
     }, tx);
 
     return app;

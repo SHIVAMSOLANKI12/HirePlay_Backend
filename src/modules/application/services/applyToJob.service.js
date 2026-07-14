@@ -62,6 +62,19 @@ export const applyToJob = async (candidateId, jobId, applicationData) => {
       },
     }, tx);
 
+    // Track reusable ActivityLog for dashboards
+    const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
+    await createActivityLog({
+      userId: candidateId,
+      companyId: job.companyId,
+      applicationId: app.id,
+      jobId: job.id,
+      type: "APPLICATION_SUBMITTED",
+      title: "Application Submitted",
+      description: `You applied for ${job.title}.`,
+      metadata: null,
+    }, tx);
+
     return app;
   });
 

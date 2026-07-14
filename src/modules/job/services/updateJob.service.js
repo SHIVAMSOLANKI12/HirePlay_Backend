@@ -23,5 +23,27 @@ export const updateJobService = async (user, jobId, payload) => {
 
   const updatedJob = await updateJob(jobId, dataToUpdate);
 
+  // Track reusable ActivityLog for dashboards
+  const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
+  
+  // Distinguish between closing a job and general updates
+  let activityType = "JOB_UPDATED";
+  let title = "Job Updated";
+  if (dataToUpdate.status === "CLOSED" && existingJob.status !== "CLOSED") {
+    activityType = "JOB_CLOSED";
+    title = "Job Closed";
+  }
+
+  await createActivityLog({
+    userId: user.id,
+    companyId: existingJob.companyId,
+    applicationId: null,
+    jobId: updatedJob.id,
+    type: activityType,
+    title,
+    description: `Job "${updatedJob.title}" was ${activityType === "JOB_CLOSED" ? "closed" : "updated"}.`,
+    metadata: null,
+  });
+
   return JobDTO.toResponse(updatedJob);
 };

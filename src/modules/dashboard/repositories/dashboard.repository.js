@@ -214,3 +214,72 @@ export const getMonthlyJobs = async (companyId, year) => {
     },
   });
 };
+
+/**
+ * Fetches recent activities for a Candidate.
+ */
+export const getCandidateActivities = async (candidateId) => {
+  return prisma.activityLog.findMany({
+    where: {
+      userId: candidateId,
+    },
+    take: 10,
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      description: true,
+      createdAt: true,
+      job: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+      company: {
+        select: {
+          id: true,
+          name: true,
+          logo: true,
+        },
+      },
+    },
+  });
+};
+
+/**
+ * Fetches recent activities for a Recruiter's Company.
+ */
+export const getRecruiterActivities = async (companyId) => {
+  return prisma.activityLog.findMany({
+    where: {
+      companyId,
+    },
+    take: 10,
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      type: true,
+      title: true,
+      description: true,
+      createdAt: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      job: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
+    },
+  });
+};

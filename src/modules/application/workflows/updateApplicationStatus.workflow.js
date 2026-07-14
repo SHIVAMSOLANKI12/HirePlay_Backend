@@ -38,6 +38,30 @@ export const updateApplicationStatusWorkflow = async (user, applicationId, reque
       metadata,
     }, tx);
 
+    // Track reusable ActivityLog for dashboards
+    const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
+    const statusToTypeMap = {
+      [APPLICATION_STATUS.SCREENING]: "APPLICATION_REVIEWED",
+      [APPLICATION_STATUS.SHORTLISTED]: "APPLICATION_SHORTLISTED",
+      [APPLICATION_STATUS.INTERVIEW]: "INTERVIEW_SCHEDULED",
+      [APPLICATION_STATUS.OFFERED]: "OFFER_SENT",
+      [APPLICATION_STATUS.HIRED]: "HIRED",
+      [APPLICATION_STATUS.REJECTED]: "APPLICATION_REJECTED",
+    };
+    
+    if (statusToTypeMap[requestedStatus]) {
+      await createActivityLog({
+        userId: application.candidateId,
+        companyId: application.job.company.id,
+        applicationId: app.id,
+        jobId: application.jobId,
+        type: statusToTypeMap[requestedStatus],
+        title: `Status Updated to ${requestedStatus}`,
+        description: `Application status changed to ${requestedStatus}.`,
+        metadata: metadata || null,
+      }, tx);
+    }
+
     // 5. Trigger Event Hooks (Placeholders)
     await onStatusChanged(app, requestedStatus, tx);
     

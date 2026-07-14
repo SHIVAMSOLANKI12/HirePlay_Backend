@@ -23,5 +23,18 @@ export const createJobService = async (user, payload) => {
 
   const newJob = await createJob(jobData);
 
+  // Track reusable ActivityLog for dashboards
+  const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
+  await createActivityLog({
+    userId: user.id,
+    companyId: companyId,
+    applicationId: null,
+    jobId: newJob.id,
+    type: "JOB_CREATED",
+    title: "Job Created",
+    description: `Created new job: ${newJob.title}.`,
+    metadata: null,
+  });
+
   return JobDTO.toResponse(newJob);
 };
