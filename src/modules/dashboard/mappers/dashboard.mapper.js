@@ -71,3 +71,80 @@ export const toCandidateDashboard = (statusCounts, recentApps) => {
     recentApplications,
   };
 };
+
+/**
+ * Transforms grouped stats and recent data into a standardized Recruiter Dashboard DTO.
+ */
+export const toRecruiterDashboard = (jobStats, appStats, recentJobsRaw, recentAppsRaw) => {
+  const overview = {
+    totalJobs: 0,
+    activeJobs: 0,
+    closedJobs: 0,
+    draftJobs: 0,
+    totalApplicants: 0,
+    shortlistedApplicants: 0,
+    rejectedApplicants: 0,
+    interviewScheduled: 0,
+    offersSent: 0,
+    hiredCandidates: 0,
+  };
+
+  // 1. Map Job Stats
+  jobStats.forEach((group) => {
+    const status = group.status;
+    const count = group._count.id;
+
+    overview.totalJobs += count;
+
+    if (status === "PUBLISHED") overview.activeJobs += count;
+    if (status === "CLOSED") overview.closedJobs += count;
+    if (status === "DRAFT") overview.draftJobs += count;
+  });
+
+  // 2. Map Application Stats
+  appStats.forEach((group) => {
+    const status = group.status;
+    const count = group._count.id;
+
+    overview.totalApplicants += count;
+
+    if (status === APPLICATION_STATUS.SHORTLISTED) overview.shortlistedApplicants += count;
+    if (status === APPLICATION_STATUS.REJECTED) overview.rejectedApplicants += count;
+    if (status === APPLICATION_STATUS.INTERVIEW) overview.interviewScheduled += count;
+    if (status === APPLICATION_STATUS.OFFERED) overview.offersSent += count;
+    if (status === APPLICATION_STATUS.HIRED) overview.hiredCandidates += count;
+  });
+
+  // 3. Map Recent Jobs
+  const recentJobs = recentJobsRaw.map((job) => ({
+    id: job.id,
+    title: job.title,
+    status: job.status,
+    createdAt: job.createdAt,
+  }));
+
+  // 4. Map Recent Applications
+  const recentApplications = recentAppsRaw.map((app) => ({
+    id: app.id,
+    status: app.status,
+    appliedAt: app.appliedAt,
+    candidate: app.candidate
+      ? {
+          id: app.candidate.id,
+          name: app.candidate.name,
+        }
+      : undefined,
+    job: app.job
+      ? {
+          id: app.job.id,
+          title: app.job.title,
+        }
+      : undefined,
+  }));
+
+  return {
+    overview,
+    recentJobs,
+    recentApplications,
+  };
+};
