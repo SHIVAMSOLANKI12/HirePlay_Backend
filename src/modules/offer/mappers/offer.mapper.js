@@ -100,3 +100,14 @@ export const toCandidateOfferListDTO = (offers) => {
   if (!Array.isArray(offers)) return [];
   return offers.map(offer => toCandidateOfferDTO(offer));
 };
+
+export const toOfferExpiryStatusDTO = (offer, isExpired, eligible) => {
+  if (!offer) return null;
+  return {
+    id: offer.id,
+    status: offer.status,
+    validUntil: offer.validUntil,
+    isExpired,
+    eligibleForCandidateResponse: eligible
+  };
+};

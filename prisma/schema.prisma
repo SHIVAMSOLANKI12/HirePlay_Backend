@@ -31,6 +31,7 @@ model User {
   updatedOffers       Offer[]       @relation("UpdatedOffers")
   approvedOffers      Offer[]       @relation("ApprovedOffers")
   sentOffers          Offer[]       @relation("SentOffers")
+  revokedOffers       Offer[]       @relation("RevokedOffers")
 }
 
 model RefreshToken {
@@ -251,6 +252,8 @@ enum ApplicationActivityAction {
   OFFER_REJECTED
   OFFER_DRAFTED
   OFFER_APPROVED
+  OFFER_REVOKED
+  OFFER_EXPIRED
   APPLICATION_REJECTED
   APPLICATION_HIRED
   NOTE_ADDED
@@ -335,6 +338,8 @@ enum ActivityType {
   OFFER_REJECTED
   OFFER_DRAFTED
   OFFER_APPROVED
+  OFFER_REVOKED
+  OFFER_EXPIRED
   JOB_CREATED
   JOB_UPDATED
   JOB_CLOSED
@@ -507,7 +512,7 @@ model Offer {
   validUntil       DateTime
   
   createdById      String
-  updatedById      String
+  updatedById      String?
   approvedById     String?
   sentById         String?
   
@@ -520,15 +525,20 @@ model Offer {
   rejectedAt       DateTime?
   candidateResponseMessage String?
   rejectionReason  String?
+  expiredAt        DateTime?
+  revokedAt        DateTime?
+  revokedById      String?
+  revocationReason String?
 
   application      Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   candidate        User         @relation("CandidateOffers", fields: [candidateId], references: [id], onDelete: Cascade)
   job              Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
   createdBy        User         @relation("CreatedOffers", fields: [createdById], references: [id], onDelete: Restrict)
-  updatedBy        User         @relation("UpdatedOffers", fields: [updatedById], references: [id], onDelete: Restrict)
+  updatedBy        User?        @relation("UpdatedOffers", fields: [updatedById], references: [id], onDelete: Restrict)
   approvedBy       User?        @relation("ApprovedOffers", fields: [approvedById], references: [id], onDelete: SetNull)
   sentBy           User?        @relation("SentOffers", fields: [sentById], references: [id], onDelete: SetNull)
+  revokedBy        User?        @relation("RevokedOffers", fields: [revokedById], references: [id], onDelete: SetNull)
 
   @@index([companyId])
   @@index([candidateId])

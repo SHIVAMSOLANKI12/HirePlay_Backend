@@ -8,6 +8,8 @@ import { deleteOfferWorkflow } from "../workflows/deleteOffer.workflow.js";
 import { approveOfferWorkflow } from "../workflows/approveOffer.workflow.js";
 import { sendOfferWorkflow } from "../workflows/sendOffer.workflow.js";
 import { getOfferWorkflowDetails } from "../workflows/getOfferWorkflow.workflow.js";
+import { revokeOfferWorkflow } from "../workflows/revokeOffer.workflow.js";
+import { getOfferStatusWorkflow } from "../workflows/getOfferStatus.workflow.js";
 
 export const createOffer = async (req, res, next) => {
   try {
@@ -88,6 +90,24 @@ export const getOfferWorkflowData = async (req, res, next) => {
   try {
     const result = await getOfferWorkflowDetails(req.user, req.params.offerId);
     return successResponse(res, result, "Offer workflow retrieved successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const revokeOffer = async (req, res, next) => {
+  try {
+    const result = await revokeOfferWorkflow(req.user, req.params.offerId, req.body);
+    return successResponse(res, result, "Offer revoked successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOfferStatus = async (req, res, next) => {
+  try {
+    const result = await getOfferStatusWorkflow(req.user, req.params.offerId);
+    return successResponse(res, result, "Offer status retrieved successfully");
   } catch (error) {
     next(error);
   }

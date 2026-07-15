@@ -1,5 +1,5 @@
 import AppError from "../../../utils/AppError.js";
-import { getCandidateOffer, acceptOffer } from "../repositories/offer.repository.js";
+import { getCandidateOffer, acceptOffer, checkAndMarkOfferExpired } from "../repositories/offer.repository.js";
 import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
 import prisma from "../../../config/prisma.js";
 
@@ -13,11 +13,12 @@ export const acceptOfferWorkflow = async (user, offerId, data) => {
     throw new AppError("Offer not found or you don't have permission to access it.", 404);
   }
 
-  if (existingOffer.status !== "SENT") {
-    throw new AppError(`Cannot accept offer. Current status is ${existingOffer.status}. Only SENT offers can be accepted.`, 400);
+  const processedOffer = await checkAndMarkOfferExpired(existingOffer);
+
+  if (processedOffer.status !== "SENT") {
+    throw new AppError(`Cannot accept offer. Current status is ${processedOffer.status}. Only SENT offers can be accepted.`, 400);
   }
 
-  // Ensure offer is not expired
   if (existingOffer.validUntil < new Date()) {
     throw new AppError("Cannot accept this offer as it has expired.", 400);
   }

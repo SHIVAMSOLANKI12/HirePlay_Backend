@@ -8,7 +8,9 @@ import {
   deleteOffer,
   approveOffer,
   sendOffer,
-  getOfferWorkflowData
+  getOfferWorkflowData,
+  revokeOffer,
+  getOfferStatus
 } from "../controllers/offer.controller.js";
 
 const router = Router();
@@ -25,6 +27,8 @@ router.delete("/:offerId", deleteOffer);
 // Workflow routes
 router.patch("/:offerId/approve", requireRole("COMPANY_ADMIN"), approveOffer);
 router.patch("/:offerId/send", sendOffer); // Requires COMPANY_ADMIN or HR, which is enforced by route base
+router.patch("/:offerId/revoke", requireRole("COMPANY_ADMIN"), revokeOffer);
 router.get("/:offerId/workflow", getOfferWorkflowData);
+router.get("/:offerId/status", getOfferStatus); // Status route for polling/verifying
 
 export default router;

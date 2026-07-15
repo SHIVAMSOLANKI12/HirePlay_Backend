@@ -200,3 +200,53 @@ export const rejectOffer = async (offerId, reason, tx = prisma) => {
     }
   });
 };
+
+export const revokeOffer = async (offerId, userId, reason, tx = prisma) => {
+  return await tx.offer.update({
+    where: { id: offerId },
+    data: {
+      status: "REVOKED",
+      revokedAt: new Date(),
+      revokedById: userId,
+      revocationReason: reason
+    }
+  });
+};
+
+export const markOfferExpired = async (offerId, tx = prisma) => {
+  return await tx.offer.update({
+    where: { id: offerId },
+    data: {
+      status: "EXPIRED",
+      expiredAt: new Date()
+    }
+  });
+};
+
+export const checkAndMarkOfferExpired = async (offer, tx = prisma) => {
+  if (!offer || ["ACCEPTED", "REJECTED", "REVOKED", "EXPIRED"].includes(offer.status)) {
+    return offer;
+  }
+  
+  if (offer.validUntil < new Date()) {
+    const expiredOffer = await markOfferExpired(offer.id, tx);
+    
+    // Log activity
+    await tx.activityLog.create({
+      data: {
+        userId: offer.createdById, // System action, but attributing to creator
+        companyId: offer.companyId,
+        applicationId: offer.applicationId,
+        jobId: offer.jobId,
+        type: "OFFER_EXPIRED",
+        title: "Offer Expired",
+        description: `Offer has automatically expired.`,
+        metadata: { offerId: offer.id }
+      }
+    });
+    
+    return { ...offer, status: "EXPIRED", expiredAt: expiredOffer.expiredAt };
+  }
+  
+  return offer;
+};

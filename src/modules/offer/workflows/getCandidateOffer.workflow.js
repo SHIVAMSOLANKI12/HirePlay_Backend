@@ -1,5 +1,5 @@
 import AppError from "../../../utils/AppError.js";
-import { getCandidateOffer } from "../repositories/offer.repository.js";
+import { getCandidateOffer, checkAndMarkOfferExpired } from "../repositories/offer.repository.js";
 import { toCandidateOfferDTO } from "../mappers/offer.mapper.js";
 
 export const getCandidateOfferWorkflow = async (user, offerId) => {
@@ -12,5 +12,7 @@ export const getCandidateOfferWorkflow = async (user, offerId) => {
     throw new AppError("Offer not found or you don't have permission to view it.", 404);
   }
 
-  return toCandidateOfferDTO(offer);
+  const processedOffer = await checkAndMarkOfferExpired(offer);
+
+  return toCandidateOfferDTO(processedOffer);
 };
