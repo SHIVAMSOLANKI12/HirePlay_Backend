@@ -65,3 +65,38 @@ export const toOfferStatusDTO = (offer) => {
     updatedAt: offer.updatedAt || new Date()
   };
 };
+
+export const toCandidateOfferDTO = (offer) => {
+  if (!offer) return null;
+  return {
+    id: offer.id,
+    company: offer.company ? {
+      id: offer.company.id,
+      name: offer.company.name,
+      logo: offer.company.logo
+    } : null,
+    job: offer.job ? {
+      id: offer.job.id,
+      title: offer.job.title,
+      department: offer.job.department
+    } : null,
+    status: offer.status,
+    employmentType: offer.employmentType,
+    salary: offer.salary,
+    currency: offer.currency,
+    joiningDate: offer.joiningDate,
+    location: offer.location,
+    reportingManager: offer.reportingManager,
+    notes: offer.notes,
+    validUntil: offer.validUntil,
+    acceptedAt: offer.acceptedAt || null,
+    rejectedAt: offer.rejectedAt || null,
+    createdAt: offer.createdAt,
+    updatedAt: offer.updatedAt
+  };
+};
+
+export const toCandidateOfferListDTO = (offers) => {
+  if (!Array.isArray(offers)) return [];
+  return offers.map(offer => toCandidateOfferDTO(offer));
+};

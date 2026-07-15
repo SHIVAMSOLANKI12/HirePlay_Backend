@@ -144,3 +144,59 @@ export const isOfferReadyToSend = async (offerId, tx = prisma) => {
   });
   return offer?.status === "APPROVED";
 };
+
+export const getCandidateOffers = async (candidateId, tx = prisma) => {
+  return await tx.offer.findMany({
+    where: { 
+      candidateId, 
+      deletedAt: null,
+      status: {
+        notIn: ["DRAFT", "APPROVED"] // Candidate only sees SENT, ACCEPTED, REJECTED, EXPIRED, REVOKED
+      }
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      company: { select: { id: true, name: true, logo: true } },
+      job: { select: { id: true, title: true, department: true } }
+    }
+  });
+};
+
+export const getCandidateOffer = async (candidateId, offerId, tx = prisma) => {
+  return await tx.offer.findFirst({
+    where: {
+      id: offerId,
+      candidateId,
+      deletedAt: null,
+      status: {
+        notIn: ["DRAFT", "APPROVED"]
+      }
+    },
+    include: {
+      company: { select: { id: true, name: true, logo: true } },
+      job: { select: { id: true, title: true, department: true } }
+    }
+  });
+};
+
+export const acceptOffer = async (offerId, message, tx = prisma) => {
+  return await tx.offer.update({
+    where: { id: offerId },
+    data: {
+      status: "ACCEPTED",
+      acceptedAt: new Date(),
+      candidateResponseMessage: message
+    }
+  });
+};
+
+export const rejectOffer = async (offerId, reason, tx = prisma) => {
+  return await tx.offer.update({
+    where: { id: offerId },
+    data: {
+      status: "REJECTED",
+      rejectedAt: new Date(),
+      rejectionReason: reason
+    }
+  });
+};

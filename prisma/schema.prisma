@@ -516,6 +516,10 @@ model Offer {
   deletedAt        DateTime?
   approvedAt       DateTime?
   sentAt           DateTime?
+  acceptedAt       DateTime?
+  rejectedAt       DateTime?
+  candidateResponseMessage String?
+  rejectionReason  String?
 
   application      Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
