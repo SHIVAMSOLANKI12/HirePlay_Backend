@@ -26,6 +26,9 @@ model User {
   scheduledInterviews Interview[] @relation("ScheduledInterviews")
   interviewFeedbacks  InterviewFeedback[]
   interviewHistories  InterviewHistory[]
+  candidateOffers     Offer[]       @relation("CandidateOffers")
+  createdOffers       Offer[]       @relation("CreatedOffers")
+  updatedOffers       Offer[]       @relation("UpdatedOffers")
 }
 
 model RefreshToken {
@@ -70,6 +73,7 @@ model Company {
   jobs               Job[]
   activityLogs       ActivityLog[]
   interviews         Interview[]
+  offers             Offer[]
 }
 
 model HR {
@@ -140,6 +144,7 @@ model Job {
   applications Application[]
   activityLogs ActivityLog[]
   interviews   Interview[]
+  offers       Offer[]
 
   @@index([companyId])
   @@index([status])
@@ -189,6 +194,7 @@ model Application {
   notes      ApplicationNote[]
   activityLogs ActivityLog[]
   interviews   Interview[]
+  offer        Offer?
 
   @@unique([candidateId, jobId])
   @@index([candidateId])
@@ -241,6 +247,7 @@ enum ApplicationActivityAction {
   OFFER_SENT
   OFFER_ACCEPTED
   OFFER_REJECTED
+  OFFER_DRAFTED
   APPLICATION_REJECTED
   APPLICATION_HIRED
   NOTE_ADDED
@@ -323,6 +330,7 @@ enum ActivityType {
   OFFER_SENT
   OFFER_ACCEPTED
   OFFER_REJECTED
+  OFFER_DRAFTED
   JOB_CREATED
   JOB_UPDATED
   JOB_CLOSED
@@ -463,4 +471,53 @@ model InterviewHistory {
 
   @@index([interviewId])
   @@index([performedById])
+}
+
+enum OfferStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
+model Offer {
+  id               String       @id @default(uuid())
+  applicationId    String       @unique
+  companyId        String
+  candidateId      String
+  jobId            String
+  status           OfferStatus  @default(DRAFT)
+  
+  jobTitle         String
+  department       String
+  employmentType   EmploymentType
+  salary           Float
+  currency         String       @default("USD")
+  joiningDate      DateTime
+  location         String
+  reportingManager String
+  notes            String?
+  validUntil       DateTime
+  
+  createdById      String
+  updatedById      String
+  
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  deletedAt        DateTime?
+
+  application      Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  candidate        User         @relation("CandidateOffers", fields: [candidateId], references: [id], onDelete: Cascade)
+  job              Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdBy        User         @relation("CreatedOffers", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy        User         @relation("UpdatedOffers", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([companyId])
+  @@index([candidateId])
+  @@index([jobId])
+  @@index([status])
+  @@index([createdAt])
 }

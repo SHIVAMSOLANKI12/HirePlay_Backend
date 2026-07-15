@@ -14,6 +14,7 @@ import resumeModule from "./modules/resume/resume.module.js";
 import applicationModule from "./modules/application/application.module.js";
 import dashboardModule from "./modules/dashboard/dashboard.module.js";
 import interviewModule from "./modules/interview/interview.module.js";
+import offerModule from "./modules/offer/offer.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -51,6 +52,7 @@ resumeModule(app);
 applicationModule(app);
 dashboardModule(app);
 interviewModule(app);
+offerModule(app);
 
 // Error handler should always be last
 app.use(errorHandler);
