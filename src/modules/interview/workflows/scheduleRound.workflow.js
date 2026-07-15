@@ -2,25 +2,24 @@ import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
 import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
 import { 
-  findRootInterviewById, 
   findHighestRoundNumber, 
   createInterview 
 } from "../repositories/interview.repository.js";
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
 import { createActivityLog } from "../../activity/services/activityLog.service.js";
+import { verifyInterviewAccess } from "../services/interview.validation.service.js";
 
 /**
- * Orchestrates the creation of a new Interview Round.
+ * Orchestrates scheduling a new interview round linked to a parent interview.
  */
 export const scheduleRoundWorkflow = async (user, parentInterviewId, data) => {
-  // 1. Fetch Root Interview Process
-  const parentInterview = await findRootInterviewById(parentInterviewId);
-  if (!parentInterview) {
-    throw new AppError("Interview process not found or is not a root interview", 404);
-  }
+  // 1. Validate Target Parent Interview
+  const parentInterview = await verifyInterviewAccess(user, parentInterviewId);
 
-  // 2. Verify Ownership and Role (Recruiter/Company Admin must own the Job)
-  await verifyRecruiterJobAccess(user, parentInterview.jobId);
+  // 1.a Validate Parent exists and is a root interview
+  if (parentInterview.parentInterviewId !== null) {
+    throw new AppError("Cannot attach a round to another child round. Must attach to a root interview.", 400);
+  }
 
   // 3. Status check: Ensure the interview process isn't closed
   if (parentInterview.status === "COMPLETED" || parentInterview.status === "CANCELLED") {

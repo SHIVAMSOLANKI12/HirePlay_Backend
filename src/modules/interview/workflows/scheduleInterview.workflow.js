@@ -11,14 +11,27 @@ import { createActivityLog } from "../../activity/services/activityLog.service.j
  * Orchestrates the creation of a new Interview.
  */
 export const scheduleInterviewWorkflow = async (user, data) => {
-  // 1. Fetch Application
-  const application = await findApplicationById(data.applicationId);
-  if (!application) {
-    throw new AppError("Application not found", 404);
-  }
+  // 1. Verify Job and Ownership
+  const job = await verifyRecruiterJobAccess(user, data.jobId);
+    
+  // 2. Validate Application exists for this job
+  const application = await prisma.application.findFirst({
+    where: {
+      id: data.applicationId,
+      jobId: data.jobId
+    },
+    select: {
+      id: true,
+      jobId: true,
+      status: true,
+      job: { select: { companyId: true, id: true } },
+      candidateId: true
+    }
+  });
 
-  // 2. Verify Ownership and Role (Recruiter/Company Admin must own the Job)
-  await verifyRecruiterJobAccess(user, application.jobId);
+  if (!application) {
+    throw new AppError("Application not found for this job", 404);
+  }
 
   // 3. Application status check (Optional based on business rules, but usually should be SHORTLISTED or INTERVIEW)
   const allowedStatuses = [APPLICATION_STATUS.SCREENING, APPLICATION_STATUS.SHORTLISTED, APPLICATION_STATUS.INTERVIEW, APPLICATION_STATUS.APPLIED];
@@ -36,8 +49,8 @@ export const scheduleInterviewWorkflow = async (user, data) => {
     // 5. Create the Interview
     const interview = await createInterview({
       applicationId: application.id,
-      companyId: application.job.company.id,
-      candidateId: application.candidate.id,
+      companyId: application.job.companyId,
+      candidateId: application.candidateId,
       jobId: application.jobId,
       scheduledById: user.id,
       title: data.title,
@@ -60,8 +73,8 @@ export const scheduleInterviewWorkflow = async (user, data) => {
     }, tx);
 
     await createActivityLog({
-      userId: application.candidate.id,
-      companyId: application.job.company.id,
+      userId: application.candidateId,
+      companyId: application.job.companyId,
       applicationId: application.id,
       jobId: application.jobId,
       type: "INTERVIEW_SCHEDULED",

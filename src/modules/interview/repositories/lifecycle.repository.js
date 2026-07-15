@@ -7,7 +7,17 @@ export const updateInterviewState = async (id, data, tx = prisma) => {
   return tx.interview.update({
     where: { id },
     data,
-    include: { job: true },
+    select: {
+      id: true,
+      applicationId: true,
+      companyId: true,
+      candidateId: true,
+      jobId: true,
+      status: true,
+      title: true,
+      scheduledAt: true,
+      decision: true,
+    }
   });
 };
 

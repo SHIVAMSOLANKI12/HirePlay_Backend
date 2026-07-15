@@ -1,6 +1,6 @@
 import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
-import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
+import { verifyInterviewAccess } from "../services/interview.validation.service.js";
 import { updateInterviewDecision, getFeedbackSummary, isEligibleForOffer } from "../repositories/decision.repository.js";
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
 import { createActivityLog } from "../../activity/services/activityLog.service.js";
@@ -9,18 +9,8 @@ import { createActivityLog } from "../../activity/services/activityLog.service.j
  * Orchestrates updating the decision of an interview process.
  */
 export const updateDecisionWorkflow = async (user, interviewId, data) => {
-  // 1. Fetch Interview
-  const interview = await prisma.interview.findUnique({
-    where: { id: interviewId },
-    include: { job: true },
-  });
-
-  if (!interview) {
-    throw new AppError("Interview not found", 404);
-  }
-
-  // 2. Verify Ownership
-  await verifyRecruiterJobAccess(user, interview.jobId);
+  // 1. Fetch & Verify Interview
+  const interview = await verifyInterviewAccess(user, interviewId);
 
   // 3. Status Rules
   if (interview.status === "CANCELLED") {

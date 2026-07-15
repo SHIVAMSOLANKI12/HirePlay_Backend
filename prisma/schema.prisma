@@ -400,6 +400,10 @@ model Interview {
   @@index([jobId])
   @@index([scheduledAt])
   @@index([parentInterviewId])
+  @@index([status])
+  @@index([roundNumber])
+  @@index([decision])
+  @@index([createdAt])
 }
 
 enum HiringRecommendation {
@@ -431,6 +435,8 @@ model InterviewFeedback {
   @@unique([interviewId, interviewerId])
   @@index([interviewId])
   @@index([interviewerId])
+  @@index([recommendation])
+  @@index([createdAt])
 }
 
 enum InterviewHistoryAction {

@@ -1,8 +1,8 @@
 import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
-import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
 import { findInterviewProcessWithRounds } from "../repositories/interview.repository.js";
 import { createFeedback, findFeedbackByInterviewer } from "../repositories/feedback.repository.js";
+import { verifyInterviewAccess } from "../services/interview.validation.service.js";
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
 import { createActivityLog } from "../../activity/services/activityLog.service.js";
 
@@ -10,19 +10,8 @@ import { createActivityLog } from "../../activity/services/activityLog.service.j
  * Orchestrates the creation of interview feedback.
  */
 export const createFeedbackWorkflow = async (user, interviewId, data) => {
-  // 1. Fetch the specific interview round
-  // To verify job access, we need to find the interview
-  const interview = await prisma.interview.findUnique({
-    where: { id: interviewId },
-    include: { job: true },
-  });
-
-  if (!interview) {
-    throw new AppError("Interview not found", 404);
-  }
-
-  // 2. Verify Ownership (Recruiter must own the Job)
-  await verifyRecruiterJobAccess(user, interview.jobId);
+  // 1. Fetch & Verify Interview
+  const interview = await verifyInterviewAccess(user, interviewId);
 
   // 3. Status check: Can't submit feedback on CANCELLED interviews
   if (interview.status === "CANCELLED") {

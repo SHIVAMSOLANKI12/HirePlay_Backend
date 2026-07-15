@@ -34,13 +34,18 @@ export const findRootInterviewById = async (interviewId, tx = prisma) => {
       id: interviewId,
       parentInterviewId: null, // Ensure it's a root interview
     },
-    include: {
+    select: {
+      id: true,
+      jobId: true,
       job: {
-        include: { company: true },
+        select: { id: true, title: true, companyId: true, company: { select: { id: true, name: true } } }
       },
+      applicationId: true,
       application: {
-        include: { candidate: true },
+        select: { id: true, candidateId: true, candidate: { select: { id: true, name: true, email: true } } }
       },
+      status: true,
+      roundNumber: true,
     }
   });
 };
@@ -64,16 +69,29 @@ export const findHighestRoundNumber = async (parentInterviewId, tx = prisma) => 
 export const findInterviewProcessWithRounds = async (interviewId, tx = prisma) => {
   return tx.interview.findFirst({
     where: { id: interviewId },
-    include: {
-      application: true,
-      company: true,
-      candidate: true,
-      job: true,
-      scheduledBy: true,
+    select: {
+      id: true,
+      applicationId: true,
+      companyId: true,
+      candidateId: true,
+      jobId: true,
+      status: true,
+      title: true,
+      scheduledAt: true,
+      application: { select: { id: true, status: true } },
+      company: { select: { id: true, name: true } },
+      candidate: { select: { id: true, name: true, email: true } },
+      job: { select: { id: true, title: true } },
+      scheduledBy: { select: { id: true, name: true } },
       childRounds: {
         orderBy: { sequence: 'asc' },
-        include: {
-          scheduledBy: true,
+        select: {
+          id: true,
+          status: true,
+          title: true,
+          roundNumber: true,
+          scheduledAt: true,
+          scheduledBy: { select: { id: true, name: true } },
         }
       }
     }
@@ -90,12 +108,21 @@ export const findRootInterviewsByApplication = async (applicationId, tx = prisma
       parentInterviewId: null,
     },
     orderBy: { createdAt: 'desc' },
-    include: {
-      scheduledBy: true,
+    select: {
+      id: true,
+      status: true,
+      title: true,
+      scheduledAt: true,
+      createdAt: true,
+      scheduledBy: { select: { id: true, name: true } },
       childRounds: {
         orderBy: { sequence: 'asc' },
-        include: {
-          scheduledBy: true,
+        select: {
+          id: true,
+          status: true,
+          title: true,
+          scheduledAt: true,
+          scheduledBy: { select: { id: true, name: true } },
         }
       }
     }

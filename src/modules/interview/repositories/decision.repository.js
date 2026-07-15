@@ -10,7 +10,16 @@ export const updateInterviewDecision = async (id, decision, decisionNotes, tx = 
       decision,
       decisionNotes,
     },
-    include: { job: true },
+    select: {
+      id: true,
+      decision: true,
+      status: true,
+      applicationId: true,
+      companyId: true,
+      candidateId: true,
+      jobId: true,
+      title: true,
+    }
   });
 };
 

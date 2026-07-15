@@ -1,24 +1,14 @@
 import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
-import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
+import { verifyInterviewAccess } from "../services/interview.validation.service.js";
 import { updateFeedback, findFeedbackByInterviewer } from "../repositories/feedback.repository.js";
 
 /**
- * Orchestrates the updating of interview feedback.
+ * Orchestrates updating an existing interview feedback.
  */
 export const updateFeedbackWorkflow = async (user, interviewId, data) => {
-  // 1. Fetch the specific interview round
-  const interview = await prisma.interview.findUnique({
-    where: { id: interviewId },
-    include: { job: true },
-  });
-
-  if (!interview) {
-    throw new AppError("Interview not found", 404);
-  }
-
-  // 2. Verify Ownership
-  await verifyRecruiterJobAccess(user, interview.jobId);
+  // 1. Fetch & Verify Interview
+  const interview = await verifyInterviewAccess(user, interviewId);
 
   // 3. Find existing feedback for this interviewer
   const existingFeedback = await findFeedbackByInterviewer(interview.id, user.id);

@@ -1,6 +1,6 @@
 import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
-import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
+import { verifyInterviewAccess } from "../services/interview.validation.service.js";
 import { updateInterviewState, createInterviewHistory } from "../repositories/lifecycle.repository.js";
 import { onInterviewRescheduled } from "../services/interviewHooks.service.js";
 
@@ -8,18 +8,8 @@ import { onInterviewRescheduled } from "../services/interviewHooks.service.js";
  * Orchestrates the rescheduling of an interview.
  */
 export const rescheduleInterviewWorkflow = async (user, interviewId, data) => {
-  // 1. Fetch Interview
-  const interview = await prisma.interview.findUnique({
-    where: { id: interviewId },
-    include: { job: true },
-  });
-
-  if (!interview) {
-    throw new AppError("Interview not found", 404);
-  }
-
-  // 2. Verify Ownership
-  await verifyRecruiterJobAccess(user, interview.jobId);
+  // 1. Fetch & Verify Interview
+  const interview = await verifyInterviewAccess(user, interviewId);
 
   // 3. Status Transition Rules
   if (interview.status === "COMPLETED" || interview.status === "CANCELLED") {
