@@ -94,3 +94,53 @@ export const existsActiveOffer = async (applicationId, tx = prisma) => {
   });
   return !!offer;
 };
+
+export const approveOffer = async (offerId, userId, tx = prisma) => {
+  return await tx.offer.update({
+    where: { id: offerId },
+    data: {
+      status: "APPROVED",
+      approvedById: userId,
+      approvedAt: new Date(),
+    }
+  });
+};
+
+export const sendOffer = async (offerId, userId, tx = prisma) => {
+  return await tx.offer.update({
+    where: { id: offerId },
+    data: {
+      status: "SENT",
+      sentById: userId,
+      sentAt: new Date(),
+    }
+  });
+};
+
+export const findWorkflow = async (offerId, tx = prisma) => {
+  return await tx.offer.findFirst({
+    where: { id: offerId, deletedAt: null },
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
+      approvedAt: true,
+      sentAt: true,
+      jobId: true,
+      approvedBy: {
+        select: { id: true, name: true, email: true }
+      },
+      sentBy: {
+        select: { id: true, name: true, email: true }
+      }
+    }
+  });
+};
+
+export const isOfferReadyToSend = async (offerId, tx = prisma) => {
+  const offer = await tx.offer.findFirst({
+    where: { id: offerId, deletedAt: null },
+    select: { status: true }
+  });
+  return offer?.status === "APPROVED";
+};

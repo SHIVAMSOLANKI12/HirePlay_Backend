@@ -35,3 +35,33 @@ export const toOfferListDTO = (offers) => {
   if (!Array.isArray(offers)) return [];
   return offers.map(offer => toOfferDTO(offer));
 };
+
+export const toWorkflowDTO = (workflow) => {
+  if (!workflow) return null;
+  return {
+    offerId: workflow.id,
+    currentStatus: workflow.status,
+    createdAt: workflow.createdAt,
+    approvedAt: workflow.approvedAt || null,
+    sentAt: workflow.sentAt || null,
+    approvedBy: workflow.approvedBy ? {
+      id: workflow.approvedBy.id,
+      name: workflow.approvedBy.name,
+      email: workflow.approvedBy.email,
+    } : null,
+    sentBy: workflow.sentBy ? {
+      id: workflow.sentBy.id,
+      name: workflow.sentBy.name,
+      email: workflow.sentBy.email,
+    } : null,
+  };
+};
+
+export const toOfferStatusDTO = (offer) => {
+  if (!offer) return null;
+  return {
+    id: offer.id,
+    status: offer.status,
+    updatedAt: offer.updatedAt || new Date()
+  };
+};

@@ -29,6 +29,8 @@ model User {
   candidateOffers     Offer[]       @relation("CandidateOffers")
   createdOffers       Offer[]       @relation("CreatedOffers")
   updatedOffers       Offer[]       @relation("UpdatedOffers")
+  approvedOffers      Offer[]       @relation("ApprovedOffers")
+  sentOffers          Offer[]       @relation("SentOffers")
 }
 
 model RefreshToken {
@@ -248,6 +250,7 @@ enum ApplicationActivityAction {
   OFFER_ACCEPTED
   OFFER_REJECTED
   OFFER_DRAFTED
+  OFFER_APPROVED
   APPLICATION_REJECTED
   APPLICATION_HIRED
   NOTE_ADDED
@@ -331,6 +334,7 @@ enum ActivityType {
   OFFER_ACCEPTED
   OFFER_REJECTED
   OFFER_DRAFTED
+  OFFER_APPROVED
   JOB_CREATED
   JOB_UPDATED
   JOB_CLOSED
@@ -475,6 +479,7 @@ model InterviewHistory {
 
 enum OfferStatus {
   DRAFT
+  APPROVED
   SENT
   ACCEPTED
   REJECTED
@@ -503,10 +508,14 @@ model Offer {
   
   createdById      String
   updatedById      String
+  approvedById     String?
+  sentById         String?
   
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   deletedAt        DateTime?
+  approvedAt       DateTime?
+  sentAt           DateTime?
 
   application      Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -514,6 +523,8 @@ model Offer {
   job              Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
   createdBy        User         @relation("CreatedOffers", fields: [createdById], references: [id], onDelete: Restrict)
   updatedBy        User         @relation("UpdatedOffers", fields: [updatedById], references: [id], onDelete: Restrict)
+  approvedBy       User?        @relation("ApprovedOffers", fields: [approvedById], references: [id], onDelete: SetNull)
+  sentBy           User?        @relation("SentOffers", fields: [sentById], references: [id], onDelete: SetNull)
 
   @@index([companyId])
   @@index([candidateId])
