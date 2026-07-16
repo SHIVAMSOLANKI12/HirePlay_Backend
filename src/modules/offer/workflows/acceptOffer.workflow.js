@@ -2,6 +2,7 @@ import AppError from "../../../utils/AppError.js";
 import { getCandidateOffer, acceptOffer, checkAndMarkOfferExpired } from "../repositories/offer.repository.js";
 import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
 import prisma from "../../../config/prisma.js";
+import { logOfferTimeline } from "../services/offerAudit.service.js";
 
 export const acceptOfferWorkflow = async (user, offerId, data) => {
   if (user.role !== "CANDIDATE") {
@@ -38,6 +39,14 @@ export const acceptOfferWorkflow = async (user, offerId, data) => {
       metadata: { offerId: updatedOffer.id, message: data.message }
     }
   });
+
+  await logOfferTimeline(
+    offerId,
+    "ACCEPTED",
+    "Offer Accepted",
+    "Candidate has accepted the offer.",
+    user
+  );
 
   return toOfferStatusDTO(updatedOffer);
 };

@@ -10,7 +10,9 @@ import {
   sendOffer,
   getOfferWorkflowData,
   revokeOffer,
-  getOfferStatus
+  getOfferStatus,
+  getOfferTimeline,
+  getOfferAudit
 } from "../controllers/offer.controller.js";
 
 const router = Router();
@@ -30,5 +32,7 @@ router.patch("/:offerId/send", sendOffer); // Requires COMPANY_ADMIN or HR, whic
 router.patch("/:offerId/revoke", requireRole("COMPANY_ADMIN"), revokeOffer);
 router.get("/:offerId/workflow", getOfferWorkflowData);
 router.get("/:offerId/status", getOfferStatus); // Status route for polling/verifying
+router.get("/:offerId/timeline", getOfferTimeline);
+router.get("/:offerId/audit", getOfferAudit);
 
 export default router;

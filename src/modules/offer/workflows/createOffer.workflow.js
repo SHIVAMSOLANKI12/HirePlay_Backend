@@ -2,6 +2,7 @@ import prisma from "../../../config/prisma.js";
 import { validateOfferCreation } from "../services/offer.validation.service.js";
 import { createOffer } from "../repositories/offer.repository.js";
 import { toOfferDTO } from "../mappers/offer.mapper.js";
+import { logOfferTimeline } from "../services/offerAudit.service.js";
 
 export const createOfferWorkflow = async (user, data) => {
   // 1. Validation & Eligibility
@@ -57,6 +58,15 @@ export const createOfferWorkflow = async (user, data) => {
         metadata: { offerId: newOffer.id }
       }
     });
+
+    await logOfferTimeline(
+      newOffer.id,
+      "CREATED",
+      "Offer Draft Created",
+      "Offer draft was created successfully.",
+      user,
+      tx
+    );
 
     return newOffer;
   });

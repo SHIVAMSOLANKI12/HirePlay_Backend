@@ -10,6 +10,8 @@ import { sendOfferWorkflow } from "../workflows/sendOffer.workflow.js";
 import { getOfferWorkflowDetails } from "../workflows/getOfferWorkflow.workflow.js";
 import { revokeOfferWorkflow } from "../workflows/revokeOffer.workflow.js";
 import { getOfferStatusWorkflow } from "../workflows/getOfferStatus.workflow.js";
+import { getOfferTimelineWorkflow } from "../workflows/getOfferTimeline.workflow.js";
+import { getOfferAuditWorkflow } from "../workflows/getOfferAudit.workflow.js";
 
 export const createOffer = async (req, res, next) => {
   try {
@@ -108,6 +110,24 @@ export const getOfferStatus = async (req, res, next) => {
   try {
     const result = await getOfferStatusWorkflow(req.user, req.params.offerId);
     return successResponse(res, result, "Offer status retrieved successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOfferTimeline = async (req, res, next) => {
+  try {
+    const result = await getOfferTimelineWorkflow(req.user, req.params.offerId);
+    return successResponse(res, result, "Offer timeline retrieved successfully");
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOfferAudit = async (req, res, next) => {
+  try {
+    const result = await getOfferAuditWorkflow(req.user, req.params.offerId);
+    return successResponse(res, result, "Offer audit logs retrieved successfully");
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,5 @@
 import prisma from "../../../config/prisma.js";
+import { logOfferTimeline } from "../services/offerAudit.service.js";
 
 export const createOffer = async (data, tx = prisma) => {
   return await tx.offer.create({
@@ -244,6 +245,15 @@ export const checkAndMarkOfferExpired = async (offer, tx = prisma) => {
         metadata: { offerId: offer.id }
       }
     });
+
+    await logOfferTimeline(
+      offer.id,
+      "EXPIRED",
+      "Offer Expired",
+      "Offer has automatically expired.",
+      { id: offer.createdById, role: "SYSTEM" }, // Dummy user for system action
+      tx
+    );
     
     return { ...offer, status: "EXPIRED", expiredAt: expiredOffer.expiredAt };
   }

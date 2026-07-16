@@ -111,3 +111,50 @@ export const toOfferExpiryStatusDTO = (offer, isExpired, eligible) => {
     eligibleForCandidateResponse: eligible
   };
 };
+
+export const toTimelineDTO = (event) => {
+  if (!event) return null;
+  return {
+    id: event.id,
+    type: event.type,
+    title: event.title,
+    description: event.description,
+    performedBy: event.performedBy ? {
+      id: event.performedBy.id,
+      name: event.performedBy.name,
+      email: event.performedBy.email
+    } : null,
+    performedByRole: event.performedByRole,
+    createdAt: event.createdAt
+  };
+};
+
+export const toTimelineListDTO = (events) => {
+  if (!Array.isArray(events)) return [];
+  return events.map(event => toTimelineDTO(event));
+};
+
+export const toAuditLogDTO = (log) => {
+  if (!log) return null;
+  return {
+    id: log.id,
+    action: log.action,
+    field: log.field,
+    oldValue: log.oldValue,
+    newValue: log.newValue,
+    ipAddress: log.ipAddress,
+    userAgent: log.userAgent,
+    performedBy: log.performedBy ? {
+      id: log.performedBy.id,
+      name: log.performedBy.name,
+      email: log.performedBy.email
+    } : null,
+    performedByRole: log.performedByRole,
+    createdAt: log.createdAt
+  };
+};
+
+export const toAuditLogListDTO = (logs) => {
+  if (!Array.isArray(logs)) return [];
+  return logs.map(log => toAuditLogDTO(log));
+};

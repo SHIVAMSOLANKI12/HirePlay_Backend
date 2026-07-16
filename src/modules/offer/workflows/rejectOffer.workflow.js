@@ -2,6 +2,7 @@ import AppError from "../../../utils/AppError.js";
 import { getCandidateOffer, rejectOffer, checkAndMarkOfferExpired } from "../repositories/offer.repository.js";
 import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
 import prisma from "../../../config/prisma.js";
+import { logOfferTimeline } from "../services/offerAudit.service.js";
 
 export const rejectOfferWorkflow = async (user, offerId, data) => {
   if (user.role !== "CANDIDATE") {
@@ -34,6 +35,14 @@ export const rejectOfferWorkflow = async (user, offerId, data) => {
       metadata: { offerId: updatedOffer.id, reason: data.reason }
     }
   });
+
+  await logOfferTimeline(
+    offerId,
+    "REJECTED",
+    "Offer Rejected",
+    "Candidate has rejected the offer.",
+    user
+  );
 
   return toOfferStatusDTO(updatedOffer);
 };

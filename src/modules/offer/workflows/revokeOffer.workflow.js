@@ -3,6 +3,7 @@ import { findOfferById, revokeOffer } from "../repositories/offer.repository.js"
 import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
 import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
 import prisma from "../../../config/prisma.js";
+import { logOfferTimeline } from "../services/offerAudit.service.js";
 
 export const revokeOfferWorkflow = async (user, offerId, data) => {
   if (user.role !== "COMPANY_ADMIN") {
@@ -37,6 +38,14 @@ export const revokeOfferWorkflow = async (user, offerId, data) => {
       metadata: { offerId: updatedOffer.id, reason: data.reason }
     }
   });
+
+  await logOfferTimeline(
+    offerId,
+    "REVOKED",
+    "Offer Revoked",
+    "Offer was revoked by company admin.",
+    user
+  );
 
   return toOfferStatusDTO(updatedOffer);
 };

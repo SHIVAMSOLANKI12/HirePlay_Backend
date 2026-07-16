@@ -3,6 +3,7 @@ import { findOfferById, sendOffer, isOfferReadyToSend } from "../repositories/of
 import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
 import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
 import prisma from "../../../config/prisma.js";
+import { logOfferTimeline } from "../services/offerAudit.service.js";
 
 export const sendOfferWorkflow = async (user, offerId) => {
   if (user.role !== "COMPANY_ADMIN" && user.role !== "HR") {
@@ -36,6 +37,14 @@ export const sendOfferWorkflow = async (user, offerId) => {
       metadata: { offerId: updatedOffer.id }
     }
   });
+
+  await logOfferTimeline(
+    offerId,
+    "SENT",
+    "Offer Sent",
+    "Offer has been sent to the candidate.",
+    user
+  );
 
   return toOfferStatusDTO(updatedOffer);
 };
