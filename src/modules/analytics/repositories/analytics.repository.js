@@ -202,3 +202,66 @@ export const getDashboardCounts = async (companyId, filters = {}) => {
     totalHires
   };
 };
+
+export const getHiredApplicationsData = async (companyId, filters = {}) => {
+  const { startDate, endDate, jobId, department } = filters;
+  const dateFilter = buildDateFilter(startDate, endDate);
+
+  const applicationFilter = {
+    job: {
+      companyId,
+      ...(jobId && { id: jobId }),
+      ...(department && { department })
+    },
+    status: "HIRED",
+    // We filter by date filter on appliedAt if provided
+    ...(dateFilter && { appliedAt: dateFilter })
+  };
+
+  return prisma.application.findMany({
+    where: applicationFilter,
+    select: {
+      id: true,
+      appliedAt: true,
+      updatedAt: true,
+      offer: {
+        select: {
+          acceptedAt: true
+        }
+      },
+      activities: {
+        where: { newStatus: "HIRED" },
+        select: { createdAt: true },
+        take: 1,
+        orderBy: { createdAt: "desc" }
+      }
+    }
+  });
+};
+
+export const getStageTransitionData = async (companyId, filters = {}) => {
+  const { startDate, endDate, jobId, department } = filters;
+  const dateFilter = buildDateFilter(startDate, endDate);
+
+  return prisma.applicationActivity.findMany({
+    where: {
+      application: {
+        job: {
+          companyId,
+          ...(jobId && { id: jobId }),
+          ...(department && { department })
+        },
+        ...(dateFilter && { appliedAt: dateFilter })
+      },
+      newStatus: { not: null }
+    },
+    select: {
+      applicationId: true,
+      newStatus: true,
+      createdAt: true
+    },
+    orderBy: {
+      createdAt: "asc"
+    }
+  });
+};

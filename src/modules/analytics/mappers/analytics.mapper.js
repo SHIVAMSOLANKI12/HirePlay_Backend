@@ -52,3 +52,41 @@ export const toDashboardSummaryDTO = (metrics) => {
     }
   };
 };
+
+export const toTimeToHireDTO = (metrics, stageMetrics, bottlenecks) => {
+  if (!metrics) return null;
+
+  return {
+    overview: {
+      averageTimeToHireDays: metrics.averageTimeToHire || 0,
+      medianTimeToHireDays: metrics.medianTimeToHire || 0,
+      fastestHireDays: metrics.fastestHire || 0,
+      slowestHireDays: metrics.slowestHire || 0,
+      totalCompletedHires: metrics.totalCompletedHires || 0
+    },
+    stageDurations: {
+      screening: stageMetrics?.screening || { averageDays: 0, minimumDays: 0, maximumDays: 0 },
+      interview: stageMetrics?.interview || { averageDays: 0, minimumDays: 0, maximumDays: 0 },
+      offer: stageMetrics?.offer || { averageDays: 0, minimumDays: 0, maximumDays: 0 },
+      hire: stageMetrics?.hire || { averageDays: 0, minimumDays: 0, maximumDays: 0 }
+    },
+    bottlenecks: {
+      longestStage: bottlenecks?.longestStage || "None",
+      averageDelayDays: bottlenecks?.averageDelay || 0,
+      highestDropOffStage: bottlenecks?.highestDropOffStage || "Unknown"
+    }
+  };
+};
+
+export const toHiringTrendDTO = (trends) => {
+  if (!trends) return null;
+
+  return {
+    trends: {
+      daily: trends.daily || [],
+      weekly: trends.weekly || [],
+      monthly: trends.monthly || [],
+      yearly: trends.yearly || []
+    }
+  };
+};
