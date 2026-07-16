@@ -6,7 +6,10 @@ import {
   getTimeToHire,
   getHiringTrends,
   getSourceAnalytics,
-  getSourceSummary
+  getSourceSummary,
+  getJobsAnalytics,
+  getJobAnalyticsById,
+  getJobsRanking
 } from "../controllers/analytics.controller.js";
 
 const router = Router();
@@ -22,5 +25,9 @@ router.get("/time-to-hire", getTimeToHire);
 router.get("/hiring-trends", getHiringTrends);
 router.get("/source", getSourceAnalytics);
 router.get("/source-summary", getSourceSummary);
+
+router.get("/jobs", getJobsAnalytics);
+router.get("/jobs/ranking", getJobsRanking); // Above /:jobId
+router.get("/jobs/:jobId", getJobAnalyticsById);
 
 export default router;

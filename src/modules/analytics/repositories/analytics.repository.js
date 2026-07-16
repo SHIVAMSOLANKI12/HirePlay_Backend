@@ -309,3 +309,55 @@ export const getApplicationsWithSourceData = async (companyId, filters = {}) => 
     }
   });
 };
+
+export const getJobsAnalyticsData = async (companyId, filters = {}, singleJobId = null) => {
+  const { startDate, endDate, department, employmentType, status } = filters;
+  const dateFilter = buildDateFilter(startDate, endDate);
+
+  return prisma.job.findMany({
+    where: {
+      companyId,
+      ...(singleJobId && { id: singleJobId }),
+      ...(department && { department }),
+      ...(employmentType && { employmentType }),
+      ...(status && { status }),
+      ...(dateFilter && { createdAt: dateFilter })
+    },
+    select: {
+      id: true,
+      title: true,
+      department: true,
+      status: true,
+      publishedAt: true,
+      closedAt: true,
+      applications: {
+        select: {
+          id: true,
+          status: true,
+          appliedAt: true,
+          updatedAt: true,
+          interviews: {
+            select: {
+              id: true,
+              status: true
+            }
+          },
+          offer: {
+            select: {
+              id: true,
+              status: true,
+              sentAt: true,
+              acceptedAt: true
+            }
+          },
+          activities: {
+            where: { newStatus: "HIRED" },
+            select: { createdAt: true },
+            take: 1,
+            orderBy: { createdAt: "desc" }
+          }
+        }
+      }
+    }
+  });
+};

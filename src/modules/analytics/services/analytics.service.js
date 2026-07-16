@@ -359,3 +359,160 @@ export const generateSourceSummary = (sourceMetrics) => {
     lowestPerformingSource
   };
 };
+
+export const calculateJobMetrics = (job) => {
+  const counts = {
+    totalApplications: 0,
+    shortlistedApplications: 0,
+    interviewScheduled: 0,
+    interviewCompleted: 0,
+    offersCreated: 0,
+    offersSent: 0,
+    offersAccepted: 0,
+    hired: 0,
+    rejected: 0
+  };
+
+  const applications = job.applications || [];
+
+  applications.forEach(app => {
+    counts.totalApplications++;
+    
+    if (["SHORTLISTED", "INTERVIEW", "OFFERED", "HIRED"].includes(app.status)) {
+      counts.shortlistedApplications++;
+    }
+    
+    if (app.status === "HIRED") counts.hired++;
+    if (app.status === "REJECTED") counts.rejected++;
+    
+    if (app.interviews && app.interviews.length > 0) {
+      counts.interviewScheduled += app.interviews.length;
+      counts.interviewCompleted += app.interviews.filter(i => i.status === "COMPLETED").length;
+    }
+    
+    if (app.offer) {
+      counts.offersCreated++;
+      if (["SENT", "ACCEPTED", "REJECTED", "EXPIRED", "REVOKED"].includes(app.offer.status)) {
+        counts.offersSent++;
+      }
+      if (app.offer.status === "ACCEPTED") {
+        counts.offersAccepted++;
+      }
+    }
+  });
+
+  const funnelMetrics = calculateFunnelMetrics(counts);
+  const hiredApps = applications.filter(app => app.status === "HIRED");
+  const timeMetrics = calculateTimeToHireMetrics(hiredApps);
+  
+  // Calculate Time to Fill
+  const timeToFillDays = calculateTimeToFill(job, hiredApps);
+
+  return {
+    jobDetails: {
+      id: job.id,
+      title: job.title,
+      department: job.department,
+      status: job.status,
+      publishedAt: job.publishedAt,
+      closedAt: job.closedAt
+    },
+    counts: funnelMetrics,
+    conversion: {
+      applicationConversionPercentage: funnelMetrics.applicationConversionRate,
+      interviewConversionPercentage: funnelMetrics.interviewConversionRate,
+      offerAcceptancePercentage: funnelMetrics.offerAcceptanceRate,
+      hiringSuccessPercentage: funnelMetrics.hiringSuccessRate,
+      overallJobConversionPercentage: funnelMetrics.overallFunnelConversionRate
+    },
+    timeMetrics: {
+      averageTimeToFillDays: timeToFillDays,
+      averageTimeToHireDays: timeMetrics.averageTimeToHire,
+      fastestHireDays: timeMetrics.fastestHire,
+      slowestHireDays: timeMetrics.slowestHire,
+      averageInterviewDuration: null, // Would require calculating interview.scheduledAt -> completedAt
+      averageOfferAcceptanceTime: null // Would require calculating offer.sentAt -> acceptedAt
+    }
+  };
+};
+
+export const calculateTimeToFill = (job, hiredApps) => {
+  if (!job.publishedAt) return null; // Can't calculate if never published
+  
+  let end = job.closedAt;
+  
+  // If not closed, find the latest hire date
+  if (!end && hiredApps && hiredApps.length > 0) {
+    let latestHireDate = null;
+    hiredApps.forEach(app => {
+      let hireDate = app.updatedAt;
+      if (app.offer?.acceptedAt) hireDate = app.offer.acceptedAt;
+      else if (app.activities?.length > 0) hireDate = app.activities[0].createdAt;
+      
+      if (!latestHireDate || new Date(hireDate) > new Date(latestHireDate)) {
+        latestHireDate = hireDate;
+      }
+    });
+    end = latestHireDate;
+  }
+  
+  if (!end) return null; // Still open and no hires
+  
+  return getDiffInDays(new Date(job.publishedAt), new Date(end));
+};
+
+export const generateJobRanking = (jobsAnalytics) => {
+  // Sort by Hires, then by Conversion Rate
+  const ranked = [...jobsAnalytics].sort((a, b) => {
+    if (b.counts.hired !== a.counts.hired) {
+      return b.counts.hired - a.counts.hired;
+    }
+    return b.conversion.overallJobConversionPercentage - a.conversion.overallJobConversionPercentage;
+  });
+
+  return ranked;
+};
+
+export const generateJobsDashboardSummary = (jobsAnalytics) => {
+  let totalJobs = jobsAnalytics.length;
+  let activeJobs = 0;
+  let closedJobs = 0;
+  let totalApps = 0;
+  let totalHires = 0;
+
+  jobsAnalytics.forEach(j => {
+    if (j.jobDetails.status === "PUBLISHED") activeJobs++;
+    if (j.jobDetails.status === "CLOSED") closedJobs++;
+    totalApps += j.counts.totalApplications;
+    totalHires += j.counts.hired;
+  });
+
+  const ranked = generateJobRanking(jobsAnalytics);
+  
+  let bestPerformingJob = null;
+  let worstPerformingJob = null;
+
+  if (ranked.length > 0) {
+    // Best is the top of the ranked list (if it has hires)
+    if (ranked[0].counts.hired > 0) {
+      bestPerformingJob = ranked[0].jobDetails.title;
+    }
+    
+    // Worst is the bottom of the ranked list (if it has applications but low/no hires)
+    const reversed = [...ranked].reverse();
+    const worst = reversed.find(j => j.counts.totalApplications > 0);
+    if (worst) {
+      worstPerformingJob = worst.jobDetails.title;
+    }
+  }
+
+  return {
+    totalJobs,
+    activeJobs,
+    closedJobs,
+    bestPerformingJob: bestPerformingJob || "None",
+    worstPerformingJob: worstPerformingJob || "None",
+    averageApplicationsPerJob: totalJobs > 0 ? Math.round(totalApps / totalJobs) : 0,
+    averageHiresPerJob: totalJobs > 0 ? Math.round(totalHires / totalJobs) : 0
+  };
+};

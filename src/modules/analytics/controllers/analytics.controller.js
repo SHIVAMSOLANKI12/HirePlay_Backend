@@ -5,6 +5,9 @@ import { getTimeToHireWorkflow } from "../workflows/getTimeToHire.workflow.js";
 import { getHiringTrendsWorkflow } from "../workflows/getHiringTrends.workflow.js";
 import { getSourceAnalyticsWorkflow } from "../workflows/getSourceAnalytics.workflow.js";
 import { getSourceSummaryWorkflow } from "../workflows/getSourceSummary.workflow.js";
+import { getJobsAnalyticsWorkflow } from "../workflows/getJobsAnalytics.workflow.js";
+import { getJobAnalyticsByIdWorkflow } from "../workflows/getJobAnalyticsById.workflow.js";
+import { getJobsRankingWorkflow } from "../workflows/getJobsRanking.workflow.js";
 
 export const getHiringFunnel = async (req, res, next) => {
   try {
@@ -99,6 +102,55 @@ export const getSourceSummary = async (req, res, next) => {
     
     const summary = await getSourceSummaryWorkflow(req.user, filters);
     return successResponse(res, summary, "Source summary retrieved successfully", 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getJobsAnalytics = async (req, res, next) => {
+  try {
+    const filters = {
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+      department: req.query.department,
+      employmentType: req.query.employmentType,
+      status: req.query.status
+    };
+    
+    const jobAnalytics = await getJobsAnalyticsWorkflow(req.user, filters);
+    return successResponse(res, jobAnalytics, "Jobs analytics retrieved successfully", 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getJobAnalyticsById = async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const filters = {
+      startDate: req.query.startDate,
+      endDate: req.query.endDate
+    };
+    
+    const jobAnalytics = await getJobAnalyticsByIdWorkflow(req.user, filters, jobId);
+    return successResponse(res, jobAnalytics, "Job analytics retrieved successfully", 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getJobsRanking = async (req, res, next) => {
+  try {
+    const filters = {
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+      department: req.query.department,
+      employmentType: req.query.employmentType,
+      status: req.query.status
+    };
+    
+    const ranking = await getJobsRankingWorkflow(req.user, filters);
+    return successResponse(res, ranking, "Jobs ranking retrieved successfully", 200);
   } catch (error) {
     next(error);
   }

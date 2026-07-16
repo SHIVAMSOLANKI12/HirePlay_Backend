@@ -147,3 +147,81 @@ export const toSourceSummaryDTO = (summary) => {
     lowestPerformingSource: summary.lowestPerformingSource || "None"
   };
 };
+
+export const toJobAnalyticsDTO = (jobMetrics) => {
+  if (!jobMetrics) return null;
+
+  return {
+    jobDetails: {
+      id: jobMetrics.jobDetails.id,
+      title: jobMetrics.jobDetails.title,
+      department: jobMetrics.jobDetails.department,
+      status: jobMetrics.jobDetails.status,
+      publishedAt: jobMetrics.jobDetails.publishedAt,
+      closedAt: jobMetrics.jobDetails.closedAt
+    },
+    counts: {
+      applications: {
+        total: jobMetrics.counts.totalApplications || 0,
+        shortlisted: jobMetrics.counts.shortlistedApplications || 0,
+      },
+      interviews: {
+        scheduled: jobMetrics.counts.interviewScheduled || 0,
+        completed: jobMetrics.counts.interviewCompleted || 0,
+      },
+      offers: {
+        created: jobMetrics.counts.offersCreated || 0,
+        sent: jobMetrics.counts.offersSent || 0,
+        accepted: jobMetrics.counts.offersAccepted || 0,
+      },
+      outcomes: {
+        hired: jobMetrics.counts.hired || 0,
+        rejected: jobMetrics.counts.rejected || 0,
+      }
+    },
+    conversionRates: {
+      applicationConversionPercentage: jobMetrics.conversion.applicationConversionPercentage || 0,
+      interviewConversionPercentage: jobMetrics.conversion.interviewConversionPercentage || 0,
+      offerAcceptancePercentage: jobMetrics.conversion.offerAcceptancePercentage || 0,
+      hiringSuccessPercentage: jobMetrics.conversion.hiringSuccessPercentage || 0,
+      overallJobConversionPercentage: jobMetrics.conversion.overallJobConversionPercentage || 0
+    },
+    timeMetrics: {
+      averageTimeToFillDays: jobMetrics.timeMetrics.averageTimeToFillDays,
+      averageTimeToHireDays: jobMetrics.timeMetrics.averageTimeToHireDays,
+      fastestHireDays: jobMetrics.timeMetrics.fastestHireDays,
+      slowestHireDays: jobMetrics.timeMetrics.slowestHireDays,
+      averageInterviewDuration: jobMetrics.timeMetrics.averageInterviewDuration,
+      averageOfferAcceptanceTime: jobMetrics.timeMetrics.averageOfferAcceptanceTime
+    }
+  };
+};
+
+export const toJobRankingDTO = (rankedJobs) => {
+  if (!rankedJobs) return [];
+
+  return rankedJobs.map((job, index) => ({
+    rank: index + 1,
+    id: job.jobDetails.id,
+    title: job.jobDetails.title,
+    department: job.jobDetails.department,
+    status: job.jobDetails.status,
+    totalApplications: job.counts.totalApplications,
+    totalHires: job.counts.hired,
+    overallConversionPercentage: job.conversion.overallJobConversionPercentage
+  }));
+};
+
+export const toJobsDashboardSummaryDTO = (summary) => {
+  if (!summary) return null;
+
+  return {
+    totalJobs: summary.totalJobs || 0,
+    activeJobs: summary.activeJobs || 0,
+    closedJobs: summary.closedJobs || 0,
+    bestPerformingJob: summary.bestPerformingJob || "None",
+    worstPerformingJob: summary.worstPerformingJob || "None",
+    averageApplicationsPerJob: summary.averageApplicationsPerJob || 0,
+    averageHiresPerJob: summary.averageHiresPerJob || 0
+  };
+};
