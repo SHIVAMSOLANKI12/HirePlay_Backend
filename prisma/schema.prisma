@@ -560,6 +560,8 @@ model Offer {
   @@index([jobId])
   @@index([status])
   @@index([createdAt])
+  @@index([validUntil])
+  @@index([deletedAt])
 }
 
 model Permission {

@@ -2,6 +2,7 @@ import AppError from "../../../utils/AppError.js";
 import { findOfferById, updateOffer } from "../repositories/offer.repository.js";
 import { toOfferDTO } from "../mappers/offer.mapper.js";
 import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
+import { validateOfferExists, validateOfferStatus } from "../services/offer.validation.service.js";
 import { trackOfferChanges, logOfferTimeline } from "../services/offerAudit.service.js";
 import prisma from "../../../config/prisma.js";
 
@@ -11,9 +12,8 @@ export const updateOfferWorkflow = async (user, offerId, data, req) => {
   }
 
   const existingOffer = await findOfferById(offerId);
-  if (!existingOffer) {
-    throw new AppError("Offer not found", 404);
-  }
+  validateOfferExists(existingOffer);
+  validateOfferStatus(existingOffer, ["DRAFT"]);
 
   // Verify access
   await verifyRecruiterJobAccess(user, existingOffer.jobId);

@@ -16,7 +16,6 @@ export const findOfferById = async (offerId, companyId = null, tx = prisma) => {
   return await tx.offer.findFirst({
     where,
     include: {
-      application: true,
       candidate: {
         select: {
           id: true,

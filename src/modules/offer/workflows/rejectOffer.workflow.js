@@ -1,24 +1,20 @@
 import AppError from "../../../utils/AppError.js";
 import { getCandidateOffer, rejectOffer, checkAndMarkOfferExpired } from "../repositories/offer.repository.js";
 import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
+import { validateOfferExists, validateOfferStatus, validateOfferNotExpired, validateOfferNotRevoked } from "../services/offer.validation.service.js";
 import prisma from "../../../config/prisma.js";
 import { logOfferTimeline } from "../services/offerAudit.service.js";
 
 export const rejectOfferWorkflow = async (user, offerId, data) => {
-  if (user.role !== "CANDIDATE") {
-    throw new AppError("Access denied. Only candidates can reject offers.", 403);
-  }
+  let offer = await getCandidateOffer(user.id, offerId);
+  validateOfferExists(offer);
+  validateOfferNotRevoked(offer);
+  validateOfferNotExpired(offer);
+  validateOfferStatus(offer, ["SENT"]);
 
-  const existingOffer = await getCandidateOffer(user.id, offerId);
-  if (!existingOffer) {
-    throw new AppError("Offer not found or you don't have permission to access it.", 404);
-  }
-
-  const processedOffer = await checkAndMarkOfferExpired(existingOffer);
-
-  if (processedOffer.status !== "SENT") {
-    throw new AppError(`Cannot reject offer. Current status is ${processedOffer.status}. Only SENT offers can be rejected.`, 400);
-  }
+  // Auto-expiry check
+  offer = await checkAndMarkOfferExpired(offer);
+  validateOfferNotExpired(offer);
 
   const updatedOffer = await rejectOffer(offerId, data.reason || "");
 
@@ -26,9 +22,9 @@ export const rejectOfferWorkflow = async (user, offerId, data) => {
   await prisma.activityLog.create({
     data: {
       userId: user.id,
-      companyId: existingOffer.companyId,
-      applicationId: existingOffer.applicationId,
-      jobId: existingOffer.jobId,
+      companyId: offer.companyId,
+      applicationId: offer.applicationId,
+      jobId: offer.jobId,
       type: "OFFER_REJECTED",
       title: "Offer Rejected",
       description: `Candidate has rejected the offer.`,

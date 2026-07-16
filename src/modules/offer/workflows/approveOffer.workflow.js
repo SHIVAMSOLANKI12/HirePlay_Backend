@@ -2,6 +2,7 @@ import AppError from "../../../utils/AppError.js";
 import { findOfferById, approveOffer } from "../repositories/offer.repository.js";
 import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
 import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
+import { validateOfferExists, validateOfferStatus } from "../services/offer.validation.service.js";
 import prisma from "../../../config/prisma.js";
 import { logOfferTimeline } from "../services/offerAudit.service.js";
 
@@ -11,15 +12,10 @@ export const approveOfferWorkflow = async (user, offerId) => {
   }
 
   const existingOffer = await findOfferById(offerId);
-  if (!existingOffer) {
-    throw new AppError("Offer not found", 404);
-  }
+  validateOfferExists(existingOffer);
+  validateOfferStatus(existingOffer, ["DRAFT"]);
 
   await verifyRecruiterJobAccess(user, existingOffer.jobId);
-
-  if (existingOffer.status !== "DRAFT") {
-    throw new AppError(`Cannot approve offer in ${existingOffer.status} state. Only DRAFT offers can be approved.`, 400);
-  }
 
   const updatedOffer = await approveOffer(offerId, user.id);
 

@@ -60,3 +60,27 @@ export const validateOfferCreation = async (user, applicationId) => {
 
   return application;
 };
+
+export const validateOfferExists = (offer) => {
+  if (!offer || offer.deletedAt) {
+    throw new AppError("Offer not found", 404);
+  }
+};
+
+export const validateOfferStatus = (offer, allowedStatuses) => {
+  if (!allowedStatuses.includes(offer.status)) {
+    throw new AppError(`Offer status is ${offer.status}, expected one of: ${allowedStatuses.join(", ")}`, 400);
+  }
+};
+
+export const validateOfferNotExpired = (offer) => {
+  if (offer.status === "EXPIRED" || new Date() > new Date(offer.validUntil)) {
+    throw new AppError("Offer has expired.", 400);
+  }
+};
+
+export const validateOfferNotRevoked = (offer) => {
+  if (offer.status === "REVOKED") {
+    throw new AppError("Offer has been revoked.", 400);
+  }
+};
