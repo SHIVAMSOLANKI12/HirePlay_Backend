@@ -54,3 +54,23 @@ export const verifyStoredRefreshToken = async (plainToken, hashedToken, expiresA
 
   return true;
 };
+
+export const hashPassword = async (password) => {
+  const saltRounds = Number(process.env.BCRYPT_SALT_ROUNDS) || 10;
+  return bcrypt.hash(password, saltRounds);
+};
+
+export const validatePasswordStrength = (password) => {
+  if (password.length < 8 || password.length > 64) {
+    throw new AppError("Password must be between 8 and 64 characters.", 400);
+  }
+  
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+    throw new AppError("Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.", 400);
+  }
+};

@@ -81,3 +81,54 @@ export const clearRefreshToken = async (hrId) => {
     },
   });
 };
+
+export const updatePassword = async (hrId, newHashedPassword) => {
+  return prisma.hR.update({
+    where: { id: hrId },
+    data: {
+      password: newHashedPassword,
+      passwordChangedAt: new Date(),
+      refreshToken: null,
+      refreshTokenExpiresAt: null,
+      tokenVersion: {
+        increment: 1,
+      },
+    },
+  });
+};
+
+export const storeResetToken = async (hrId, hashedToken, expiresAt) => {
+  return prisma.hR.update({
+    where: { id: hrId },
+    data: {
+      passwordResetToken: hashedToken,
+      passwordResetExpiresAt: expiresAt,
+    },
+  });
+};
+
+export const findByResetToken = async (hashedToken) => {
+  return prisma.hR.findFirst({
+    where: {
+      passwordResetToken: hashedToken,
+      passwordResetExpiresAt: {
+        gt: new Date(),
+      },
+    },
+  });
+};
+
+export const clearResetToken = async (hrId) => {
+  return prisma.hR.update({
+    where: { id: hrId },
+    data: {
+      passwordResetToken: null,
+      passwordResetExpiresAt: null,
+      tokenVersion: {
+        increment: 1,
+      },
+      refreshToken: null,
+      refreshTokenExpiresAt: null,
+    },
+  });
+};

@@ -1,9 +1,12 @@
 import asyncHandler from "../../../../middleware/async.middleware.js";
-import { loginSchema, refreshTokenSchema } from "../validations/auth.validation.js";
+import { loginSchema, refreshTokenSchema, changePasswordSchema, forgotPasswordSchema, resetPasswordSchema } from "../validations/auth.validation.js";
 import { executeHRLogin } from "../workflows/login.workflow.js";
 import { executeGetHRMe } from "../workflows/me.workflow.js";
 import { executeHRRefreshToken } from "../workflows/refreshToken.workflow.js";
 import { executeHRLogout } from "../workflows/logout.workflow.js";
+import { executeHRChangePassword } from "../workflows/changePassword.workflow.js";
+import { executeHRForgotPassword } from "../workflows/forgotPassword.workflow.js";
+import { executeHRResetPassword } from "../workflows/resetPassword.workflow.js";
 import { successResponse } from "../../../../utils/apiResponse.js";
 
 export const hrLoginController = asyncHandler(async (req, res) => {
@@ -23,6 +26,27 @@ export const hrRefreshTokenController = asyncHandler(async (req, res) => {
 export const hrLogoutController = asyncHandler(async (req, res) => {
   const { refreshToken } = refreshTokenSchema.parse(req.body);
   const result = await executeHRLogout(req.user.id, refreshToken);
+  
+  return successResponse(res, result, result.message, 200);
+});
+
+export const hrChangePasswordController = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+  const result = await executeHRChangePassword(req.user.id, currentPassword, newPassword);
+  
+  return successResponse(res, result, result.message, 200);
+});
+
+export const hrForgotPasswordController = asyncHandler(async (req, res) => {
+  const { email } = forgotPasswordSchema.parse(req.body);
+  const result = await executeHRForgotPassword(email);
+  
+  return successResponse(res, result, result.message, 200);
+});
+
+export const hrResetPasswordController = asyncHandler(async (req, res) => {
+  const { token, newPassword } = resetPasswordSchema.parse(req.body);
+  const result = await executeHRResetPassword(token, newPassword);
   
   return successResponse(res, result, result.message, 200);
 });
