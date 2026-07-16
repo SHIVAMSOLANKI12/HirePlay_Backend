@@ -16,6 +16,7 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   company       Company[]
+
   refreshTokens RefreshToken[]
   applications  Application[]
   resumes       Resume[]
@@ -24,6 +25,8 @@ model User {
   activityLogs  ActivityLog[]
   candidateInterviews Interview[] @relation("CandidateInterviews")
   scheduledInterviews Interview[] @relation("ScheduledInterviews")
+  createdInterviews   Interview[] @relation("InterviewCreator")
+  updatedInterviews   Interview[] @relation("InterviewUpdater")
 
   interviewFeedbacks  InterviewFeedback[]
   interviewHistories  InterviewHistory[]
@@ -148,6 +151,7 @@ model Job {
   benefits        String?
   status          JobStatus      @default(DRAFT)
   publishedAt     DateTime?
+  closedAt        DateTime?
   applicationDeadline DateTime?
 
 
@@ -164,6 +168,8 @@ model Job {
   @@index([companyId])
   @@index([status])
   @@index([createdAt])
+  @@index([publishedAt])
+  @@index([closedAt])
 }
 
 enum JobStatus {
@@ -187,16 +193,33 @@ enum WorkMode {
   HYBRID
 }
 
+enum ApplicationSource {
+  CAREERS_PAGE
+  COMPANY_WEBSITE
+  LINKEDIN
+  NAUKRI
+  INDEED
+  REFERRAL
+  CONSULTANCY
+  CAMPUS
+  MANUAL
+  OTHER
+}
+
 model Application {
   id          String            @id @default(uuid())
   candidateId String
   jobId       String
   resumeId    String?
   status      ApplicationStatus @default(APPLIED)
+  source      ApplicationSource @default(CAREERS_PAGE)
   resumeUrl   String?
   coverLetter String?
   appliedAt   DateTime          @default(now())
   withdrawnAt DateTime?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -216,6 +239,7 @@ model Application {
   @@index([jobId])
   @@index([status])
   @@index([createdAt])
+  @@index([source])
 }
 
 enum ApplicationStatus {
@@ -405,7 +429,13 @@ model Interview {
   parentInterviewId String?
   sequence        Int             @default(1)
   isFinalRound    Boolean         @default(false)
+  startedAt       DateTime?
   completedAt     DateTime?
+  cancelledAt     DateTime?
+  rescheduledAt   DateTime?
+  
+  createdById     String?
+  updatedById     String?
   
   decision        InterviewDecision @default(PENDING)
   decisionNotes   String?
@@ -418,6 +448,8 @@ model Interview {
   candidate       User            @relation("CandidateInterviews", fields: [candidateId], references: [id], onDelete: Cascade)
   job             Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
   scheduledBy     User            @relation("ScheduledInterviews", fields: [scheduledById], references: [id], onDelete: SetNull)
+  createdBy       User?           @relation("InterviewCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy       User?           @relation("InterviewUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   parentInterview Interview?      @relation("InterviewRounds", fields: [parentInterviewId], references: [id], onDelete: Cascade)
   childRounds     Interview[]     @relation("InterviewRounds")
   feedbacks       InterviewFeedback[]

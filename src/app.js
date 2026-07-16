@@ -16,6 +16,7 @@ import dashboardModule from "./modules/dashboard/dashboard.module.js";
 import interviewModule from "./modules/interview/interview.module.js";
 import offerModule from "./modules/offer/offer.module.js";
 import authorizationModule from "./modules/authorization/authorization.module.js";
+import analyticsModule from "./modules/analytics/analytics.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -55,6 +56,7 @@ dashboardModule(app);
 interviewModule(app);
 offerModule(app);
 authorizationModule(app);
+analyticsModule(app);
 
 // Error handler should always be last
 app.use(errorHandler);
