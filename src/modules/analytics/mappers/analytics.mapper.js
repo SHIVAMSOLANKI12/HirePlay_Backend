@@ -225,3 +225,65 @@ export const toJobsDashboardSummaryDTO = (summary) => {
     averageHiresPerJob: summary.averageHiresPerJob || 0
   };
 };
+
+export const toRecruiterAnalyticsDTO = (recruiterMetrics) => {
+  if (!recruiterMetrics) return null;
+
+  return {
+    recruiterDetails: {
+      id: recruiterMetrics.recruiterDetails.id,
+      name: recruiterMetrics.recruiterDetails.name,
+      department: recruiterMetrics.recruiterDetails.department
+    },
+    counts: {
+      jobsManaged: recruiterMetrics.counts.jobsManaged,
+      applicationsReviewed: recruiterMetrics.counts.applicationsReviewed,
+      applicationsShortlisted: recruiterMetrics.counts.applicationsShortlisted,
+      interviewsScheduled: recruiterMetrics.counts.interviewsScheduled,
+      interviewsCompleted: recruiterMetrics.counts.interviewsCompleted,
+      feedbackSubmitted: recruiterMetrics.counts.feedbackSubmitted,
+      offersCreated: recruiterMetrics.counts.offersCreated,
+      offersSent: recruiterMetrics.counts.offersSent,
+      offersAccepted: recruiterMetrics.counts.offersAccepted,
+      successfulHires: recruiterMetrics.counts.successfulHires,
+      rejectedCandidates: recruiterMetrics.counts.rejectedCandidates
+    },
+    performance: {
+      applicationReviewRatePercentage: recruiterMetrics.performance.applicationReviewRatePercentage,
+      interviewCompletionRatePercentage: recruiterMetrics.performance.interviewCompletionRatePercentage,
+      offerAcceptanceRatePercentage: recruiterMetrics.performance.offerAcceptanceRatePercentage,
+      hiringSuccessRatePercentage: recruiterMetrics.performance.hiringSuccessRatePercentage,
+      averageTimeToHireDays: recruiterMetrics.performance.averageTimeToHireDays,
+      averageCandidateRating: recruiterMetrics.performance.averageCandidateRating,
+      averageInterviewRating: recruiterMetrics.performance.averageInterviewRating,
+      averageFeedbackRating: recruiterMetrics.performance.averageFeedbackRating
+    }
+  };
+};
+
+export const toRecruiterRankingDTO = (rankedRecruiters) => {
+  if (!rankedRecruiters) return [];
+
+  return rankedRecruiters.map((recruiter, index) => ({
+    rank: index + 1,
+    id: recruiter.recruiterDetails.id,
+    name: recruiter.recruiterDetails.name,
+    department: recruiter.recruiterDetails.department,
+    successfulHires: recruiter.counts.successfulHires,
+    offerAcceptanceRatePercentage: recruiter.performance.offerAcceptanceRatePercentage,
+    interviewCompletionRatePercentage: recruiter.performance.interviewCompletionRatePercentage,
+    overallScore: recruiter.performance.overallScore
+  }));
+};
+
+export const toRecruiterSummaryDTO = (summary) => {
+  if (!summary) return null;
+
+  return {
+    topRecruiter: summary.topRecruiter || "None",
+    lowestPerformingRecruiter: summary.lowestPerformingRecruiter || "None",
+    averageHiresPerRecruiter: summary.averageHiresPerRecruiter || 0,
+    averageInterviewsPerRecruiter: summary.averageInterviewsPerRecruiter || 0,
+    averageOffersPerRecruiter: summary.averageOffersPerRecruiter || 0
+  };
+};

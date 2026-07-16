@@ -9,7 +9,10 @@ import {
   getSourceSummary,
   getJobsAnalytics,
   getJobAnalyticsById,
-  getJobsRanking
+  getJobsRanking,
+  getRecruitersAnalytics,
+  getRecruiterAnalyticsById,
+  getRecruitersRanking
 } from "../controllers/analytics.controller.js";
 
 const router = Router();
@@ -29,5 +32,9 @@ router.get("/source-summary", getSourceSummary);
 router.get("/jobs", getJobsAnalytics);
 router.get("/jobs/ranking", getJobsRanking); // Above /:jobId
 router.get("/jobs/:jobId", getJobAnalyticsById);
+
+router.get("/recruiters", getRecruitersAnalytics);
+router.get("/recruiters/ranking", getRecruitersRanking); // Above /:recruiterId
+router.get("/recruiters/:recruiterId", getRecruiterAnalyticsById);
 
 export default router;

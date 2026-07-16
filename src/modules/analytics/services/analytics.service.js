@@ -516,3 +516,203 @@ export const generateJobsDashboardSummary = (jobsAnalytics) => {
     averageHiresPerJob: totalJobs > 0 ? Math.round(totalHires / totalJobs) : 0
   };
 };
+
+export const bucketRecruiterData = (data) => {
+  const { recruiters, jobs, activities, interviews, feedbacks, offers } = data;
+  const bucket = {};
+
+  // Initialize
+  recruiters.forEach(r => {
+    bucket[r.id] = {
+      recruiterDetails: {
+        id: r.id,
+        name: r.name,
+        department: r.designation || "Recruiting"
+      },
+      counts: {
+        jobsManaged: 0,
+        applicationsReviewed: 0,
+        applicationsShortlisted: 0,
+        interviewsScheduled: 0,
+        interviewsCompleted: 0,
+        feedbackSubmitted: 0,
+        offersCreated: 0,
+        offersSent: 0,
+        offersAccepted: 0,
+        successfulHires: 0,
+        rejectedCandidates: 0,
+        totalOverallRating: 0 // for average interview rating
+      }
+    };
+  });
+
+  // Aggregate Jobs
+  jobs.forEach(job => {
+    if (bucket[job.createdBy]) {
+      bucket[job.createdBy].counts.jobsManaged++;
+    }
+  });
+
+  // Aggregate Activities
+  activities.forEach(act => {
+    if (bucket[act.performedBy]) {
+      const counts = bucket[act.performedBy].counts;
+      // All activities count as reviewed basically, but let's be specific
+      counts.applicationsReviewed++;
+
+      if (act.newStatus === "SHORTLISTED") counts.applicationsShortlisted++;
+      if (act.newStatus === "HIRED") counts.successfulHires++;
+      if (act.newStatus === "REJECTED") counts.rejectedCandidates++;
+    }
+  });
+
+  // Aggregate Interviews
+  interviews.forEach(int => {
+    if (bucket[int.scheduledById]) {
+      bucket[int.scheduledById].counts.interviewsScheduled++;
+      if (int.status === "COMPLETED") {
+        bucket[int.scheduledById].counts.interviewsCompleted++;
+      }
+    }
+  });
+
+  // Aggregate Feedbacks
+  feedbacks.forEach(fb => {
+    if (bucket[fb.interviewerId]) {
+      bucket[fb.interviewerId].counts.feedbackSubmitted++;
+      bucket[fb.interviewerId].counts.totalOverallRating += (fb.overallRating || 0);
+    }
+  });
+
+  // Aggregate Offers
+  offers.forEach(offer => {
+    if (bucket[offer.createdById]) {
+      const counts = bucket[offer.createdById].counts;
+      counts.offersCreated++;
+      if (["SENT", "ACCEPTED", "REJECTED", "EXPIRED", "REVOKED"].includes(offer.status)) {
+        counts.offersSent++;
+      }
+      if (offer.status === "ACCEPTED") {
+        counts.offersAccepted++;
+      }
+    }
+  });
+
+  return bucket;
+};
+
+export const calculateRecruiterMetrics = (bucketedData) => {
+  return Object.values(bucketedData).map(recruiter => {
+    const counts = recruiter.counts;
+
+    // Rates
+    const applicationReviewRate = calculatePercentage(
+      counts.applicationsShortlisted + counts.rejectedCandidates + counts.successfulHires,
+      counts.applicationsReviewed
+    );
+    
+    const interviewCompletionRate = calculatePercentage(
+      counts.interviewsCompleted,
+      counts.interviewsScheduled
+    );
+
+    const offerAcceptanceRate = calculatePercentage(
+      counts.offersAccepted,
+      counts.offersSent
+    );
+
+    const hiringSuccessRate = calculatePercentage(
+      counts.successfulHires,
+      counts.applicationsShortlisted
+    );
+
+    const averageInterviewRating = counts.feedbackSubmitted > 0 
+      ? parseFloat((counts.totalOverallRating / counts.feedbackSubmitted).toFixed(1)) 
+      : 0;
+
+    // Overall Score (Simple arbitrary weighting for ranking purposes)
+    // Score = Hires*10 + Shortlists*2 + Offer Acceptance%*0.5 + Interview Completion%*0.2
+    const overallScore = 
+      (counts.successfulHires * 10) + 
+      (counts.applicationsShortlisted * 2) + 
+      (offerAcceptanceRate * 0.5) + 
+      (interviewCompletionRate * 0.2);
+
+    return {
+      recruiterDetails: recruiter.recruiterDetails,
+      counts: {
+        jobsManaged: counts.jobsManaged,
+        applicationsReviewed: counts.applicationsReviewed,
+        applicationsShortlisted: counts.applicationsShortlisted,
+        interviewsScheduled: counts.interviewsScheduled,
+        interviewsCompleted: counts.interviewsCompleted,
+        feedbackSubmitted: counts.feedbackSubmitted,
+        offersCreated: counts.offersCreated,
+        offersSent: counts.offersSent,
+        offersAccepted: counts.offersAccepted,
+        successfulHires: counts.successfulHires,
+        rejectedCandidates: counts.rejectedCandidates
+      },
+      performance: {
+        applicationReviewRatePercentage: applicationReviewRate,
+        interviewCompletionRatePercentage: interviewCompletionRate,
+        offerAcceptanceRatePercentage: offerAcceptanceRate,
+        hiringSuccessRatePercentage: hiringSuccessRate,
+        averageTimeToHireDays: null, // Requires tracking specific candidates to hire timeline
+        averageCandidateRating: null, // Not in schema
+        averageInterviewRating: averageInterviewRating,
+        averageFeedbackRating: averageInterviewRating,
+        overallScore: parseFloat(overallScore.toFixed(2))
+      }
+    };
+  });
+};
+
+export const generateRecruiterRanking = (recruitersAnalytics) => {
+  // Sort by Successful Hires, then by Overall Score
+  return [...recruitersAnalytics].sort((a, b) => {
+    if (b.counts.successfulHires !== a.counts.successfulHires) {
+      return b.counts.successfulHires - a.counts.successfulHires;
+    }
+    return b.performance.overallScore - a.performance.overallScore;
+  });
+};
+
+export const generateRecruiterDashboardSummary = (recruitersAnalytics) => {
+  const ranked = generateRecruiterRanking(recruitersAnalytics);
+  const totalRecruiters = recruitersAnalytics.length;
+  
+  let totalHires = 0;
+  let totalInterviews = 0;
+  let totalOffers = 0;
+
+  recruitersAnalytics.forEach(r => {
+    totalHires += r.counts.successfulHires;
+    totalInterviews += r.counts.interviewsCompleted;
+    totalOffers += r.counts.offersSent;
+  });
+
+  let topRecruiter = "None";
+  let lowestPerformingRecruiter = "None";
+
+  if (ranked.length > 0) {
+    if (ranked[0].counts.successfulHires > 0 || ranked[0].performance.overallScore > 0) {
+      topRecruiter = ranked[0].recruiterDetails.name;
+    }
+    
+    // Bottom performer who has actually reviewed applications or managed jobs
+    const reversed = [...ranked].reverse();
+    const worst = reversed.find(r => r.counts.jobsManaged > 0 || r.counts.applicationsReviewed > 0);
+    if (worst) {
+      lowestPerformingRecruiter = worst.recruiterDetails.name;
+    }
+  }
+
+  return {
+    topRecruiter,
+    lowestPerformingRecruiter,
+    averageHiresPerRecruiter: totalRecruiters > 0 ? Math.round(totalHires / totalRecruiters) : 0,
+    averageInterviewsPerRecruiter: totalRecruiters > 0 ? Math.round(totalInterviews / totalRecruiters) : 0,
+    averageOffersPerRecruiter: totalRecruiters > 0 ? Math.round(totalOffers / totalRecruiters) : 0
+  };
+};

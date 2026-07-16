@@ -361,3 +361,83 @@ export const getJobsAnalyticsData = async (companyId, filters = {}, singleJobId 
     }
   });
 };
+
+export const getRecruiterAnalyticsData = async (companyId, filters = {}, recruiterId = null) => {
+  const { startDate, endDate, department, jobId, status } = filters;
+  const dateFilter = buildDateFilter(startDate, endDate);
+
+  // Fetch Recruiters (HRs and Company Admin)
+  const hrs = await prisma.hR.findMany({
+    where: { companyId, ...(recruiterId && { id: recruiterId }) },
+    select: { id: true, firstName: true, lastName: true, designation: true }
+  });
+
+  const owner = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { owner: { select: { id: true, name: true } } }
+  });
+
+  const recruiters = [...hrs.map(hr => ({ id: hr.id, name: `${hr.firstName} ${hr.lastName}`, designation: hr.designation }))];
+  if (owner?.owner && (!recruiterId || owner.owner.id === recruiterId)) {
+    // Only add if not already present
+    if (!recruiters.find(r => r.id === owner.owner.id)) {
+      recruiters.push({ id: owner.owner.id, name: owner.owner.name, designation: "Company Admin" });
+    }
+  }
+
+  const recruiterIds = recruiters.map(r => r.id);
+
+  // Job Filters
+  const jobWhere = {
+    companyId,
+    ...(jobId && { id: jobId }),
+    ...(department && { department }),
+    ...(status && { status })
+  };
+
+  // Fetch metrics data
+  const jobs = await prisma.job.findMany({
+    where: { ...jobWhere, createdBy: { in: recruiterIds }, ...(dateFilter && { createdAt: dateFilter }) },
+    select: { id: true, createdBy: true }
+  });
+
+  const activities = await prisma.applicationActivity.findMany({
+    where: { 
+      application: { job: jobWhere },
+      performedBy: { in: recruiterIds },
+      ...(dateFilter && { createdAt: dateFilter })
+    },
+    select: { id: true, performedBy: true, action: true, newStatus: true }
+  });
+
+  const interviews = await prisma.interview.findMany({
+    where: { 
+      companyId, 
+      ...(jobId && { jobId }),
+      scheduledById: { in: recruiterIds }, 
+      ...(dateFilter && { createdAt: dateFilter }) 
+    },
+    select: { id: true, scheduledById: true, status: true }
+  });
+
+  const feedbacks = await prisma.interviewFeedback.findMany({
+    where: { 
+      interview: { companyId, ...(jobId && { jobId }) }, 
+      interviewerId: { in: recruiterIds }, 
+      ...(dateFilter && { createdAt: dateFilter }) 
+    },
+    select: { id: true, interviewerId: true, overallRating: true }
+  });
+
+  const offers = await prisma.offer.findMany({
+    where: { 
+      companyId, 
+      ...(jobId && { jobId }),
+      createdById: { in: recruiterIds }, 
+      ...(dateFilter && { createdAt: dateFilter }) 
+    },
+    select: { id: true, createdById: true, status: true }
+  });
+
+  return { recruiters, jobs, activities, interviews, feedbacks, offers };
+};
