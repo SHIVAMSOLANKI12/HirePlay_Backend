@@ -555,3 +555,25 @@ model Offer {
   @@index([status])
   @@index([createdAt])
 }
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role
+  permissionId String
+  createdAt    DateTime   @default(now())
+  
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([role, permissionId])
+  @@index([role])
+}
