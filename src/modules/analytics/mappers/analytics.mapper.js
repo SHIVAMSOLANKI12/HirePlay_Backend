@@ -90,3 +90,60 @@ export const toHiringTrendDTO = (trends) => {
     }
   };
 };
+
+export const toSourceAnalyticsDTO = (sourceMetrics) => {
+  if (!sourceMetrics) return null;
+
+  const result = {};
+  for (const [source, data] of Object.entries(sourceMetrics)) {
+    result[source] = {
+      counts: {
+        totalJobs: data.counts.totalJobs || 0,
+        applications: {
+          total: data.counts.totalApplications || 0,
+          shortlisted: data.counts.shortlistedApplications || 0,
+        },
+        interviews: {
+          scheduled: data.counts.interviewScheduled || 0,
+          completed: data.counts.interviewCompleted || 0,
+        },
+        offers: {
+          created: data.counts.offersCreated || 0,
+          sent: data.counts.offersSent || 0,
+          accepted: data.counts.offersAccepted || 0,
+        },
+        outcomes: {
+          hired: data.counts.hired || 0,
+          rejected: data.counts.rejected || 0,
+        }
+      },
+      conversionRates: {
+        applicationConversionPercentage: data.conversion.applicationConversionPercentage || 0,
+        interviewConversionPercentage: data.conversion.interviewConversionPercentage || 0,
+        offerAcceptancePercentage: data.conversion.offerAcceptancePercentage || 0,
+        hiringSuccessPercentage: data.conversion.hiringSuccessPercentage || 0,
+        overallFunnelConversionPercentage: data.conversion.overallFunnelConversionPercentage || 0
+      },
+      quality: {
+        averageTimeToHireDays: data.quality.averageTimeToHireDays || 0,
+        averageInterviewScore: data.quality.averageInterviewScore, // Will be null
+        averageCandidateRating: data.quality.averageCandidateRating, // Will be null
+        averageOfferAcceptancePercentage: data.quality.averageOfferAcceptancePercentage || 0
+      }
+    };
+  }
+
+  return result;
+};
+
+export const toSourceSummaryDTO = (summary) => {
+  if (!summary) return null;
+
+  return {
+    bestPerformingSource: summary.bestPerformingSource || "None",
+    highestHiringSource: summary.highestHiringSource || "None",
+    highestOfferAcceptanceSource: summary.highestOfferAcceptanceSource || "None",
+    highestInterviewConversionSource: summary.highestInterviewConversionSource || "None",
+    lowestPerformingSource: summary.lowestPerformingSource || "None"
+  };
+};

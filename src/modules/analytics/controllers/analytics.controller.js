@@ -3,6 +3,8 @@ import { getHiringFunnelWorkflow } from "../workflows/getHiringFunnel.workflow.j
 import { getDashboardSummaryWorkflow } from "../workflows/getDashboardSummary.workflow.js";
 import { getTimeToHireWorkflow } from "../workflows/getTimeToHire.workflow.js";
 import { getHiringTrendsWorkflow } from "../workflows/getHiringTrends.workflow.js";
+import { getSourceAnalyticsWorkflow } from "../workflows/getSourceAnalytics.workflow.js";
+import { getSourceSummaryWorkflow } from "../workflows/getSourceSummary.workflow.js";
 
 export const getHiringFunnel = async (req, res, next) => {
   try {
@@ -63,6 +65,40 @@ export const getHiringTrends = async (req, res, next) => {
     
     const trends = await getHiringTrendsWorkflow(req.user, filters);
     return successResponse(res, trends, "Hiring trends retrieved successfully", 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSourceAnalytics = async (req, res, next) => {
+  try {
+    const filters = {
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+      jobId: req.query.jobId,
+      department: req.query.department,
+      source: req.query.source
+    };
+    
+    const sourceAnalytics = await getSourceAnalyticsWorkflow(req.user, filters);
+    return successResponse(res, sourceAnalytics, "Source analytics retrieved successfully", 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getSourceSummary = async (req, res, next) => {
+  try {
+    const filters = {
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+      jobId: req.query.jobId,
+      department: req.query.department,
+      source: req.query.source
+    };
+    
+    const summary = await getSourceSummaryWorkflow(req.user, filters);
+    return successResponse(res, summary, "Source summary retrieved successfully", 200);
   } catch (error) {
     next(error);
   }

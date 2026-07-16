@@ -265,3 +265,47 @@ export const getStageTransitionData = async (companyId, filters = {}) => {
     }
   });
 };
+
+export const getApplicationsWithSourceData = async (companyId, filters = {}) => {
+  const { startDate, endDate, jobId, department, source } = filters;
+  const dateFilter = buildDateFilter(startDate, endDate);
+
+  return prisma.application.findMany({
+    where: {
+      job: {
+        companyId,
+        ...(jobId && { id: jobId }),
+        ...(department && { department })
+      },
+      ...(source && { source }),
+      ...(dateFilter && { createdAt: dateFilter })
+    },
+    select: {
+      id: true,
+      source: true,
+      status: true,
+      appliedAt: true,
+      updatedAt: true,
+      interviews: {
+        select: {
+          id: true,
+          status: true
+        }
+      },
+      offer: {
+        select: {
+          id: true,
+          status: true,
+          sentAt: true,
+          acceptedAt: true
+        }
+      },
+      activities: {
+        where: { newStatus: "HIRED" },
+        select: { createdAt: true },
+        take: 1,
+        orderBy: { createdAt: "desc" }
+      }
+    }
+  });
+};

@@ -4,7 +4,9 @@ import {
   getHiringFunnel,
   getDashboardSummary,
   getTimeToHire,
-  getHiringTrends
+  getHiringTrends,
+  getSourceAnalytics,
+  getSourceSummary
 } from "../controllers/analytics.controller.js";
 
 const router = Router();
@@ -18,5 +20,7 @@ router.get("/hiring-funnel", getHiringFunnel);
 router.get("/dashboard-summary", getDashboardSummary);
 router.get("/time-to-hire", getTimeToHire);
 router.get("/hiring-trends", getHiringTrends);
+router.get("/source", getSourceAnalytics);
+router.get("/source-summary", getSourceSummary);
 
 export default router;

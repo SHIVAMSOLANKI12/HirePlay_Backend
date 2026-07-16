@@ -219,3 +219,143 @@ export const calculateHiringTrends = (applications) => {
     yearly: formatTrend(trends.yearly)
   };
 };
+
+export const bucketSourceData = (applications) => {
+  const sources = {};
+  
+  // Initialize default structure
+  const sourceKeys = ["CAREERS_PAGE", "COMPANY_WEBSITE", "LINKEDIN", "NAUKRI", "INDEED", "REFERRAL", "CONSULTANCY", "CAMPUS", "MANUAL", "OTHER"];
+  sourceKeys.forEach(key => {
+    sources[key] = {
+      applications: [],
+      counts: {
+        totalApplications: 0,
+        shortlistedApplications: 0,
+        interviewScheduled: 0,
+        interviewCompleted: 0,
+        offersCreated: 0,
+        offersSent: 0,
+        offersAccepted: 0,
+        hired: 0,
+        rejected: 0
+      }
+    };
+  });
+
+  applications.forEach(app => {
+    const src = app.source || "OTHER";
+    if (!sources[src]) return;
+
+    sources[src].applications.push(app);
+    const counts = sources[src].counts;
+    
+    counts.totalApplications++;
+    
+    if (["SHORTLISTED", "INTERVIEW", "OFFERED", "HIRED"].includes(app.status)) {
+      counts.shortlistedApplications++;
+    }
+    
+    if (app.status === "HIRED") counts.hired++;
+    if (app.status === "REJECTED") counts.rejected++;
+    
+    if (app.interviews && app.interviews.length > 0) {
+      counts.interviewScheduled += app.interviews.length;
+      counts.interviewCompleted += app.interviews.filter(i => i.status === "COMPLETED").length;
+    }
+    
+    if (app.offer) {
+      counts.offersCreated++;
+      if (["SENT", "ACCEPTED", "REJECTED", "EXPIRED", "REVOKED"].includes(app.offer.status)) {
+        counts.offersSent++;
+      }
+      if (app.offer.status === "ACCEPTED") {
+        counts.offersAccepted++;
+      }
+    }
+  });
+
+  return sources;
+};
+
+export const calculateSourceMetrics = (bucketedData) => {
+  const result = {};
+  
+  for (const [source, data] of Object.entries(bucketedData)) {
+    const funnelMetrics = calculateFunnelMetrics(data.counts);
+    
+    // We only pass hired apps to calculate time to hire
+    const hiredApps = data.applications.filter(app => app.status === "HIRED");
+    const qualityMetrics = calculateTimeToHireMetrics(hiredApps);
+
+    result[source] = {
+      counts: funnelMetrics, // Funnel counts
+      conversion: {
+        applicationConversionPercentage: funnelMetrics.applicationConversionRate,
+        interviewConversionPercentage: funnelMetrics.interviewConversionRate,
+        offerAcceptancePercentage: funnelMetrics.offerAcceptanceRate,
+        hiringSuccessPercentage: funnelMetrics.hiringSuccessRate,
+        overallFunnelConversionPercentage: funnelMetrics.overallFunnelConversionRate
+      },
+      quality: {
+        averageTimeToHireDays: qualityMetrics.averageTimeToHire,
+        averageInterviewScore: null,
+        averageCandidateRating: null,
+        averageOfferAcceptancePercentage: funnelMetrics.offerAcceptanceRate
+      }
+    };
+  }
+  
+  return result;
+};
+
+export const generateSourceSummary = (sourceMetrics) => {
+  let highestHires = -1;
+  let bestPerformingSource = "None";
+  let highestHiringSource = "None";
+  
+  let highestOfferAcceptance = -1;
+  let highestOfferAcceptanceSource = "None";
+  
+  let highestInterviewConversion = -1;
+  let highestInterviewConversionSource = "None";
+  
+  let lowestHires = Infinity;
+  let lowestPerformingSource = "None";
+
+  for (const [source, data] of Object.entries(sourceMetrics)) {
+    const hires = data.counts.hired;
+    const offerAcc = data.conversion.offerAcceptancePercentage;
+    const intConv = data.conversion.interviewConversionPercentage;
+
+    if (hires > highestHires) {
+      highestHires = hires;
+      bestPerformingSource = source;
+      highestHiringSource = source;
+    }
+
+    if (offerAcc > highestOfferAcceptance && data.counts.offersSent > 0) {
+      highestOfferAcceptance = offerAcc;
+      highestOfferAcceptanceSource = source;
+    }
+
+    if (intConv > highestInterviewConversion && data.counts.interviewCompleted > 0) {
+      highestInterviewConversion = intConv;
+      highestInterviewConversionSource = source;
+    }
+
+    if (hires < lowestHires && data.counts.totalApplications > 0) {
+      lowestHires = hires;
+      lowestPerformingSource = source;
+    }
+  }
+
+  if (lowestHires === Infinity) lowestPerformingSource = "None";
+
+  return {
+    bestPerformingSource,
+    highestHiringSource,
+    highestOfferAcceptanceSource,
+    highestInterviewConversionSource,
+    lowestPerformingSource
+  };
+};
