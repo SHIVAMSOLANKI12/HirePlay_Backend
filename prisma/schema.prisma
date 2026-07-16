@@ -240,6 +240,8 @@ model Application {
   @@index([status])
   @@index([createdAt])
   @@index([source])
+  @@index([jobId, status]) // Analytics Index
+  @@index([jobId, source]) // Analytics Index
 }
 
 enum ApplicationStatus {
@@ -319,6 +321,7 @@ model ApplicationActivity {
   @@index([performedBy])
   @@index([action])
   @@index([createdAt])
+  @@index([performedBy, createdAt]) // Analytics Index
 }
 
 model ApplicationNote {
@@ -465,6 +468,8 @@ model Interview {
   @@index([roundNumber])
   @@index([decision])
   @@index([createdAt])
+  @@index([companyId, jobId, status]) // Analytics Index
+  @@index([scheduledById]) // Analytics Index
 }
 
 enum HiringRecommendation {
@@ -594,6 +599,8 @@ model Offer {
   @@index([createdAt])
   @@index([validUntil])
   @@index([deletedAt])
+  @@index([companyId, jobId, status]) // Analytics Index
+  @@index([createdById]) // Analytics Index
 }
 
 model Permission {

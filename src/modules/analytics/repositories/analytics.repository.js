@@ -1,38 +1,38 @@
 import prisma from "../../../config/prisma.js";
 
-const buildDateFilter = (startDate, endDate) => {
+// --- REUSABLE FILTERS ---
+
+export const buildDateFilter = (startDate, endDate, dateField = "createdAt") => {
   const filter = {};
-  if (startDate) {
-    filter.gte = new Date(startDate);
-  }
+  if (startDate) filter.gte = new Date(startDate);
   if (endDate) {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
     filter.lte = end;
   }
-  return Object.keys(filter).length > 0 ? filter : undefined;
+  return Object.keys(filter).length > 0 ? { [dateField]: filter } : undefined;
 };
 
-export const getFunnelCounts = async (companyId, filters = {}) => {
-  const { startDate, endDate, jobId, department } = filters;
-
-  const dateFilter = buildDateFilter(startDate, endDate);
-  
-  const jobFilter = {
-    companyId,
-    ...(dateFilter && { createdAt: dateFilter }),
-    ...(department && { department })
-  };
-
-  const appJobFilter = {
+export const buildJobWhere = (companyId, filters) => {
+  const { jobId, department, status, employmentType } = filters;
+  return {
     companyId,
     ...(jobId && { id: jobId }),
-    ...(department && { department })
+    ...(department && { department }),
+    ...(status && { status }),
+    ...(employmentType && { employmentType })
   };
+};
 
-  const applicationFilter = {
-    job: appJobFilter,
-    ...(dateFilter && { createdAt: dateFilter })
+// --- DB OPTIMIZED QUERIES ---
+
+export const getFunnelCounts = async (companyId, filters = {}) => {
+  const jobWhere = buildJobWhere(companyId, filters);
+  const createdDateFilter = buildDateFilter(filters.startDate, filters.endDate);
+  
+  const appWhere = {
+    job: jobWhere,
+    ...createdDateFilter
   };
 
   const [
@@ -47,106 +47,25 @@ export const getFunnelCounts = async (companyId, filters = {}) => {
     hired,
     rejected
   ] = await Promise.all([
-    prisma.job.count({ where: jobFilter }),
-    
-    prisma.application.count({ where: applicationFilter }),
-    
-    prisma.application.count({ 
-      where: { 
-        ...applicationFilter,
-        status: { in: ["SHORTLISTED", "INTERVIEW", "OFFERED", "HIRED"] }
-      } 
-    }),
-    
-    prisma.interview.count({
-      where: {
-        companyId,
-        job: appJobFilter,
-        ...(dateFilter && { createdAt: dateFilter })
-      }
-    }),
-    
-    prisma.interview.count({
-      where: {
-        companyId,
-        job: appJobFilter,
-        status: "COMPLETED",
-        ...(dateFilter && { createdAt: dateFilter })
-      }
-    }),
-
-    prisma.offer.count({
-      where: {
-        companyId,
-        job: appJobFilter,
-        ...(dateFilter && { createdAt: dateFilter })
-      }
-    }),
-
-    prisma.offer.count({
-      where: {
-        companyId,
-        job: appJobFilter,
-        status: { in: ["SENT", "ACCEPTED", "REJECTED", "EXPIRED", "REVOKED"] },
-        ...(dateFilter && { sentAt: dateFilter })
-      }
-    }),
-
-    prisma.offer.count({
-      where: {
-        companyId,
-        job: appJobFilter,
-        status: "ACCEPTED",
-        ...(dateFilter && { acceptedAt: dateFilter })
-      }
-    }),
-
-    prisma.application.count({
-      where: {
-        ...applicationFilter,
-        status: "HIRED"
-      }
-    }),
-
-    prisma.application.count({
-      where: {
-        ...applicationFilter,
-        status: "REJECTED"
-      }
-    })
+    prisma.job.count({ where: { ...jobWhere, ...createdDateFilter } }),
+    prisma.application.count({ where: appWhere }),
+    prisma.application.count({ where: { ...appWhere, status: { in: ["SHORTLISTED", "INTERVIEW", "OFFERED", "HIRED"] } } }),
+    prisma.interview.count({ where: { companyId, job: jobWhere, ...createdDateFilter } }),
+    prisma.interview.count({ where: { companyId, job: jobWhere, status: "COMPLETED", ...createdDateFilter } }),
+    prisma.offer.count({ where: { companyId, job: jobWhere, ...createdDateFilter } }),
+    prisma.offer.count({ where: { companyId, job: jobWhere, status: { in: ["SENT", "ACCEPTED", "REJECTED", "EXPIRED", "REVOKED"] }, ...buildDateFilter(filters.startDate, filters.endDate, "sentAt") } }),
+    prisma.offer.count({ where: { companyId, job: jobWhere, status: "ACCEPTED", ...buildDateFilter(filters.startDate, filters.endDate, "acceptedAt") } }),
+    prisma.application.count({ where: { ...appWhere, status: "HIRED" } }),
+    prisma.application.count({ where: { ...appWhere, status: "REJECTED" } })
   ]);
 
-  return {
-    totalJobs,
-    totalApplications,
-    shortlistedApplications,
-    interviewScheduled,
-    interviewCompleted,
-    offersCreated,
-    offersSent,
-    offersAccepted,
-    hired,
-    rejected
-  };
+  return { totalJobs, totalApplications, shortlistedApplications, interviewScheduled, interviewCompleted, offersCreated, offersSent, offersAccepted, hired, rejected };
 };
 
 export const getDashboardCounts = async (companyId, filters = {}) => {
-  const { startDate, endDate, jobId, department } = filters;
-
-  const dateFilter = buildDateFilter(startDate, endDate);
+  const jobWhere = buildJobWhere(companyId, filters);
+  const createdDateFilter = buildDateFilter(filters.startDate, filters.endDate);
   
-  const appJobFilter = {
-    companyId,
-    ...(jobId && { id: jobId }),
-    ...(department && { department })
-  };
-
-  const jobFilter = {
-    companyId,
-    ...(department && { department }),
-    ...(dateFilter && { createdAt: dateFilter })
-  };
-
   const [
     totalJobs,
     activeJobs,
@@ -156,79 +75,33 @@ export const getDashboardCounts = async (companyId, filters = {}) => {
     totalOffers,
     totalHires
   ] = await Promise.all([
-    prisma.job.count({ where: jobFilter }),
-    prisma.job.count({ where: { ...jobFilter, status: "PUBLISHED" } }),
-    prisma.job.count({ where: { ...jobFilter, status: "CLOSED" } }),
-    
-    prisma.application.count({
-      where: {
-        job: appJobFilter,
-        ...(dateFilter && { createdAt: dateFilter })
-      }
-    }),
-    
-    prisma.interview.count({
-      where: {
-        companyId,
-        job: appJobFilter,
-        ...(dateFilter && { createdAt: dateFilter })
-      }
-    }),
-
-    prisma.offer.count({
-      where: {
-        companyId,
-        job: appJobFilter,
-        ...(dateFilter && { createdAt: dateFilter })
-      }
-    }),
-
-    prisma.application.count({
-      where: {
-        job: appJobFilter,
-        status: "HIRED",
-        ...(dateFilter && { createdAt: dateFilter })
-      }
-    })
+    prisma.job.count({ where: { ...jobWhere, ...createdDateFilter } }),
+    prisma.job.count({ where: { ...jobWhere, status: "PUBLISHED", ...createdDateFilter } }),
+    prisma.job.count({ where: { ...jobWhere, status: "CLOSED", ...createdDateFilter } }),
+    prisma.application.count({ where: { job: jobWhere, ...createdDateFilter } }),
+    prisma.interview.count({ where: { companyId, job: jobWhere, ...createdDateFilter } }),
+    prisma.offer.count({ where: { companyId, job: jobWhere, ...createdDateFilter } }),
+    prisma.application.count({ where: { job: jobWhere, status: "HIRED", ...createdDateFilter } })
   ]);
 
-  return {
-    totalJobs,
-    activeJobs,
-    closedJobs,
-    totalApplications,
-    totalInterviews,
-    totalOffers,
-    totalHires
-  };
+  return { totalJobs, activeJobs, closedJobs, totalApplications, totalInterviews, totalOffers, totalHires };
 };
 
 export const getHiredApplicationsData = async (companyId, filters = {}) => {
-  const { startDate, endDate, jobId, department } = filters;
-  const dateFilter = buildDateFilter(startDate, endDate);
-
-  const applicationFilter = {
-    job: {
-      companyId,
-      ...(jobId && { id: jobId }),
-      ...(department && { department })
-    },
-    status: "HIRED",
-    // We filter by date filter on appliedAt if provided
-    ...(dateFilter && { appliedAt: dateFilter })
-  };
+  const jobWhere = buildJobWhere(companyId, filters);
+  const appliedDateFilter = buildDateFilter(filters.startDate, filters.endDate, "appliedAt");
 
   return prisma.application.findMany({
-    where: applicationFilter,
+    where: {
+      job: jobWhere,
+      status: "HIRED",
+      ...appliedDateFilter
+    },
     select: {
       id: true,
       appliedAt: true,
       updatedAt: true,
-      offer: {
-        select: {
-          acceptedAt: true
-        }
-      },
+      offer: { select: { acceptedAt: true } },
       activities: {
         where: { newStatus: "HIRED" },
         select: { createdAt: true },
@@ -240,18 +113,14 @@ export const getHiredApplicationsData = async (companyId, filters = {}) => {
 };
 
 export const getStageTransitionData = async (companyId, filters = {}) => {
-  const { startDate, endDate, jobId, department } = filters;
-  const dateFilter = buildDateFilter(startDate, endDate);
+  const jobWhere = buildJobWhere(companyId, filters);
+  const dateFilter = buildDateFilter(filters.startDate, filters.endDate, "appliedAt");
 
   return prisma.applicationActivity.findMany({
     where: {
       application: {
-        job: {
-          companyId,
-          ...(jobId && { id: jobId }),
-          ...(department && { department })
-        },
-        ...(dateFilter && { appliedAt: dateFilter })
+        job: jobWhere,
+        ...dateFilter
       },
       newStatus: { not: null }
     },
@@ -267,18 +136,16 @@ export const getStageTransitionData = async (companyId, filters = {}) => {
 };
 
 export const getApplicationsWithSourceData = async (companyId, filters = {}) => {
-  const { startDate, endDate, jobId, department, source } = filters;
-  const dateFilter = buildDateFilter(startDate, endDate);
+  const jobWhere = buildJobWhere(companyId, filters);
+  const createdDateFilter = buildDateFilter(filters.startDate, filters.endDate);
 
+  // We still need the nested select here because source analytics bucket service calculates conversion rates
+  // To avoid N+1, we use select precisely
   return prisma.application.findMany({
     where: {
-      job: {
-        companyId,
-        ...(jobId && { id: jobId }),
-        ...(department && { department })
-      },
-      ...(source && { source }),
-      ...(dateFilter && { createdAt: dateFilter })
+      job: jobWhere,
+      ...(filters.source && { source: filters.source }),
+      ...createdDateFilter
     },
     select: {
       id: true,
@@ -286,20 +153,8 @@ export const getApplicationsWithSourceData = async (companyId, filters = {}) => 
       status: true,
       appliedAt: true,
       updatedAt: true,
-      interviews: {
-        select: {
-          id: true,
-          status: true
-        }
-      },
-      offer: {
-        select: {
-          id: true,
-          status: true,
-          sentAt: true,
-          acceptedAt: true
-        }
-      },
+      interviews: { select: { id: true, status: true } },
+      offer: { select: { id: true, status: true, sentAt: true, acceptedAt: true } },
       activities: {
         where: { newStatus: "HIRED" },
         select: { createdAt: true },
@@ -311,17 +166,14 @@ export const getApplicationsWithSourceData = async (companyId, filters = {}) => 
 };
 
 export const getJobsAnalyticsData = async (companyId, filters = {}, singleJobId = null) => {
-  const { startDate, endDate, department, employmentType, status } = filters;
-  const dateFilter = buildDateFilter(startDate, endDate);
+  const jobWhere = buildJobWhere(companyId, filters);
+  if (singleJobId) jobWhere.id = singleJobId;
+  const createdDateFilter = buildDateFilter(filters.startDate, filters.endDate);
 
   return prisma.job.findMany({
     where: {
-      companyId,
-      ...(singleJobId && { id: singleJobId }),
-      ...(department && { department }),
-      ...(employmentType && { employmentType }),
-      ...(status && { status }),
-      ...(dateFilter && { createdAt: dateFilter })
+      ...jobWhere,
+      ...createdDateFilter
     },
     select: {
       id: true,
@@ -336,20 +188,8 @@ export const getJobsAnalyticsData = async (companyId, filters = {}, singleJobId 
           status: true,
           appliedAt: true,
           updatedAt: true,
-          interviews: {
-            select: {
-              id: true,
-              status: true
-            }
-          },
-          offer: {
-            select: {
-              id: true,
-              status: true,
-              sentAt: true,
-              acceptedAt: true
-            }
-          },
+          interviews: { select: { id: true, status: true } },
+          offer: { select: { id: true, status: true, sentAt: true, acceptedAt: true } },
           activities: {
             where: { newStatus: "HIRED" },
             select: { createdAt: true },
@@ -363,8 +203,8 @@ export const getJobsAnalyticsData = async (companyId, filters = {}, singleJobId 
 };
 
 export const getRecruiterAnalyticsData = async (companyId, filters = {}, recruiterId = null) => {
-  const { startDate, endDate, department, jobId, status } = filters;
-  const dateFilter = buildDateFilter(startDate, endDate);
+  const jobWhere = buildJobWhere(companyId, filters);
+  const createdDateFilter = buildDateFilter(filters.startDate, filters.endDate);
 
   // Fetch Recruiters (HRs and Company Admin)
   const hrs = await prisma.hR.findMany({
@@ -379,7 +219,6 @@ export const getRecruiterAnalyticsData = async (companyId, filters = {}, recruit
 
   const recruiters = [...hrs.map(hr => ({ id: hr.id, name: `${hr.firstName} ${hr.lastName}`, designation: hr.designation }))];
   if (owner?.owner && (!recruiterId || owner.owner.id === recruiterId)) {
-    // Only add if not already present
     if (!recruiters.find(r => r.id === owner.owner.id)) {
       recruiters.push({ id: owner.owner.id, name: owner.owner.name, designation: "Company Admin" });
     }
@@ -387,17 +226,8 @@ export const getRecruiterAnalyticsData = async (companyId, filters = {}, recruit
 
   const recruiterIds = recruiters.map(r => r.id);
 
-  // Job Filters
-  const jobWhere = {
-    companyId,
-    ...(jobId && { id: jobId }),
-    ...(department && { department }),
-    ...(status && { status })
-  };
-
-  // Fetch metrics data
   const jobs = await prisma.job.findMany({
-    where: { ...jobWhere, createdBy: { in: recruiterIds }, ...(dateFilter && { createdAt: dateFilter }) },
+    where: { ...jobWhere, createdBy: { in: recruiterIds }, ...createdDateFilter },
     select: { id: true, createdBy: true }
   });
 
@@ -405,7 +235,7 @@ export const getRecruiterAnalyticsData = async (companyId, filters = {}, recruit
     where: { 
       application: { job: jobWhere },
       performedBy: { in: recruiterIds },
-      ...(dateFilter && { createdAt: dateFilter })
+      ...createdDateFilter
     },
     select: { id: true, performedBy: true, action: true, newStatus: true }
   });
@@ -413,18 +243,18 @@ export const getRecruiterAnalyticsData = async (companyId, filters = {}, recruit
   const interviews = await prisma.interview.findMany({
     where: { 
       companyId, 
-      ...(jobId && { jobId }),
+      ...(filters.jobId && { jobId: filters.jobId }),
       scheduledById: { in: recruiterIds }, 
-      ...(dateFilter && { createdAt: dateFilter }) 
+      ...createdDateFilter 
     },
     select: { id: true, scheduledById: true, status: true }
   });
 
   const feedbacks = await prisma.interviewFeedback.findMany({
     where: { 
-      interview: { companyId, ...(jobId && { jobId }) }, 
+      interview: { companyId, ...(filters.jobId && { jobId: filters.jobId }) }, 
       interviewerId: { in: recruiterIds }, 
-      ...(dateFilter && { createdAt: dateFilter }) 
+      ...createdDateFilter 
     },
     select: { id: true, interviewerId: true, overallRating: true }
   });
@@ -432,9 +262,9 @@ export const getRecruiterAnalyticsData = async (companyId, filters = {}, recruit
   const offers = await prisma.offer.findMany({
     where: { 
       companyId, 
-      ...(jobId && { jobId }),
+      ...(filters.jobId && { jobId: filters.jobId }),
       createdById: { in: recruiterIds }, 
-      ...(dateFilter && { createdAt: dateFilter }) 
+      ...createdDateFilter 
     },
     select: { id: true, createdById: true, status: true }
   });
