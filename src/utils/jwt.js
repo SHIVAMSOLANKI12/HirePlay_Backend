@@ -15,6 +15,35 @@ export const generateAccessToken = (user) => {
   );
 };
 
+export const generateHRAccessToken = (hr) => {
+  return jwt.sign(
+    {
+      id: hr.id,
+      userId: hr.id,
+      companyId: hr.companyId,
+      email: hr.email,
+      role: hr.role,
+    },
+    env.JWT_SECRET,
+    {
+      expiresIn: env.ACCESS_TOKEN_EXPIRES_IN,
+    }
+  );
+};
+
+export const generateHRRefreshToken = (hr) => {
+  return jwt.sign(
+    {
+      userId: hr.id,
+      tokenVersion: hr.tokenVersion || 1,
+    },
+    env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: env.REFRESH_TOKEN_EXPIRES_IN,
+    }
+  );
+};
+
 export const generateRefreshToken = (user) => {
   return jwt.sign(
     {
