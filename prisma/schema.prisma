@@ -8,36 +8,37 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
-  name          String
-  email         String         @unique
-  password      String
-  role          Role           @default(CANDIDATE)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  company       Company[]
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(CANDIDATE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  company   Company[]
 
-  refreshTokens RefreshToken[]
-  applications  Application[]
-  resumes       Resume[]
-  activities    ApplicationActivity[]
-  applicationNotes ApplicationNote[]
-  activityLogs  ActivityLog[]
-  candidateInterviews Interview[] @relation("CandidateInterviews")
-  scheduledInterviews Interview[] @relation("ScheduledInterviews")
-  createdInterviews   Interview[] @relation("InterviewCreator")
-  updatedInterviews   Interview[] @relation("InterviewUpdater")
+  refreshTokens       RefreshToken[]
+  applications        Application[]
+  resumes             Resume[]
+  activities          ApplicationActivity[]
+  applicationNotes    ApplicationNote[]
+  activityLogs        ActivityLog[]
+  candidateInterviews Interview[]           @relation("CandidateInterviews")
+  scheduledInterviews Interview[]           @relation("ScheduledInterviews")
+  createdInterviews   Interview[]           @relation("InterviewCreator")
+  updatedInterviews   Interview[]           @relation("InterviewUpdater")
 
-  interviewFeedbacks  InterviewFeedback[]
-  interviewHistories  InterviewHistory[]
-  candidateOffers     Offer[]       @relation("CandidateOffers")
-  createdOffers       Offer[]       @relation("CreatedOffers")
-  updatedOffers       Offer[]       @relation("UpdatedOffers")
-  approvedOffers      Offer[]       @relation("ApprovedOffers")
-  sentOffers          Offer[]       @relation("SentOffers")
-  revokedOffers       Offer[]       @relation("RevokedOffers")
-  performedTimelines  OfferTimeline[]
-  performedAuditLogs  OfferAuditLog[]
+  interviewFeedbacks InterviewFeedback[]
+  interviewHistories InterviewHistory[]
+  candidateOffers    Offer[]             @relation("CandidateOffers")
+  createdOffers      Offer[]             @relation("CreatedOffers")
+  updatedOffers      Offer[]             @relation("UpdatedOffers")
+  approvedOffers     Offer[]             @relation("ApprovedOffers")
+  sentOffers         Offer[]             @relation("SentOffers")
+  revokedOffers      Offer[]             @relation("RevokedOffers")
+  performedTimelines OfferTimeline[]
+  performedAuditLogs OfferAuditLog[]
+  notifications      Notification[]
 }
 
 model RefreshToken {
@@ -54,9 +55,9 @@ model RefreshToken {
 }
 
 model Company {
-  id                 String      @id @default(cuid())
+  id                 String         @id @default(cuid())
   name               String
-  slug               String      @unique
+  slug               String         @unique
   email              String?
   phone              String?
   website            String?
@@ -65,51 +66,52 @@ model Company {
   logo               String?
   description        String?
   ownerId            String
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
   deletedAt          DateTime?
-  careerPagePublic   Boolean     @default(true)
-  currency           String      @default("USD")
-  dateFormat         String      @default("YYYY-MM-DD")
-  defaultHiringStage String      @default("Applied")
-  emailNotifications Boolean     @default(true)
-  language           String      @default("en")
-  smsNotifications   Boolean     @default(false)
-  timeFormat         String      @default("24h")
-  timezone           String      @default("UTC")
-  owner              User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  careerPagePublic   Boolean        @default(true)
+  currency           String         @default("USD")
+  dateFormat         String         @default("YYYY-MM-DD")
+  defaultHiringStage String         @default("Applied")
+  emailNotifications Boolean        @default(true)
+  language           String         @default("en")
+  smsNotifications   Boolean        @default(false)
+  timeFormat         String         @default("24h")
+  timezone           String         @default("UTC")
+  owner              User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   hrs                HR[]
   jobs               Job[]
   activityLogs       ActivityLog[]
   interviews         Interview[]
   offers             Offer[]
+  notifications      Notification[]
 }
 
 model HR {
-  id          String    @id @default(uuid())
-  firstName   String
-  lastName    String
-  email       String    @unique
-  phone       String
-  designation String
-  password    String
-  role        Role      @default(HR)
-  status      String    @default("ACTIVE")
-  isActive    Boolean   @default(true)
-  lastLoginAt DateTime?
-  avatar      String?
-  companyId   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  refreshToken  String?
-  refreshTokenExpiresAt DateTime?
-  tokenVersion  Int       @default(1)
-  lastLogoutAt  DateTime?
-  passwordResetToken String?
+  id                     String    @id @default(uuid())
+  firstName              String
+  lastName               String
+  email                  String    @unique
+  phone                  String
+  designation            String
+  password               String
+  role                   Role      @default(HR)
+  status                 String    @default("ACTIVE")
+  isActive               Boolean   @default(true)
+  lastLoginAt            DateTime?
+  avatar                 String?
+  companyId              String
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+  refreshToken           String?
+  refreshTokenExpiresAt  DateTime?
+  tokenVersion           Int       @default(1)
+  lastLogoutAt           DateTime?
+  passwordResetToken     String?
   passwordResetExpiresAt DateTime?
-  passwordChangedAt DateTime?
-  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  passwordChangedAt      DateTime?
+  company                Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
@@ -134,26 +136,25 @@ enum HRStatus {
 }
 
 model Job {
-  id              String         @id @default(uuid())
-  companyId       String
-  createdBy       String
-  title           String
-  department      String
-  employmentType  EmploymentType
-  experienceLevel String?
-  location        String
-  workMode        WorkMode
-  salaryMin       Float?
-  salaryMax       Float?
-  currency        String         @default("USD")
-  description     String
-  requirements    String
-  benefits        String?
-  status          JobStatus      @default(DRAFT)
-  publishedAt     DateTime?
-  closedAt        DateTime?
+  id                  String         @id @default(uuid())
+  companyId           String
+  createdBy           String
+  title               String
+  department          String
+  employmentType      EmploymentType
+  experienceLevel     String?
+  location            String
+  workMode            WorkMode
+  salaryMin           Float?
+  salaryMax           Float?
+  currency            String         @default("USD")
+  description         String
+  requirements        String
+  benefits            String?
+  status              JobStatus      @default(DRAFT)
+  publishedAt         DateTime?
+  closedAt            DateTime?
   applicationDeadline DateTime?
-
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -225,11 +226,11 @@ model Application {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  candidate User   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  job       Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  resume    Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
-  activities ApplicationActivity[]
-  notes      ApplicationNote[]
+  candidate    User                  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  job          Job                   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume       Resume?               @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  activities   ApplicationActivity[]
+  notes        ApplicationNote[]
   activityLogs ActivityLog[]
   interviews   Interview[]
   offer        Offer?
@@ -256,19 +257,19 @@ enum ApplicationStatus {
 }
 
 model Resume {
-  id           String    @id @default(uuid())
+  id           String  @id @default(uuid())
   candidateId  String
   fileName     String
   originalName String
   mimeType     String
   fileSize     Int
-  storageKey   String    @unique
+  storageKey   String  @unique
   fileUrl      String
-  isActive     Boolean   @default(true)
-  
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  isActive     Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   candidate    User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applications Application[]
@@ -309,13 +310,13 @@ model ApplicationActivity {
   oldStatus     ApplicationStatus?
   newStatus     ApplicationStatus?
   metadata      Json?
-  
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-  deletedAt     DateTime?
 
-  application   Application               @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  user          User                      @relation(fields: [performedBy], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [performedBy], references: [id], onDelete: Cascade)
 
   @@index([applicationId])
   @@index([performedBy])
@@ -325,16 +326,16 @@ model ApplicationActivity {
 }
 
 model ApplicationNote {
-  id            String      @id @default(uuid())
+  id            String @id @default(uuid())
   applicationId String
   authorId      String
   note          String
-  
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
 
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  author        User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([applicationId])
   @@index([authorId])
@@ -354,10 +355,10 @@ model ActivityLog {
   createdAt     DateTime     @default(now())
 
   // relations
-  company       Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  application   Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  job           Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  company     Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  job         Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
   @@index([userId])
@@ -426,35 +427,35 @@ model Interview {
   meetingLink     String?
   location        String?
   notes           String?
-  
-  roundNumber     Int             @default(1)
-  roundName       String?
+
+  roundNumber       Int       @default(1)
+  roundName         String?
   parentInterviewId String?
-  sequence        Int             @default(1)
-  isFinalRound    Boolean         @default(false)
-  startedAt       DateTime?
-  completedAt     DateTime?
-  cancelledAt     DateTime?
-  rescheduledAt   DateTime?
-  
-  createdById     String?
-  updatedById     String?
-  
-  decision        InterviewDecision @default(PENDING)
-  decisionNotes   String?
+  sequence          Int       @default(1)
+  isFinalRound      Boolean   @default(false)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  rescheduledAt     DateTime?
 
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdById String?
+  updatedById String?
 
-  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  candidate       User            @relation("CandidateInterviews", fields: [candidateId], references: [id], onDelete: Cascade)
-  job             Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  scheduledBy     User            @relation("ScheduledInterviews", fields: [scheduledById], references: [id], onDelete: SetNull)
-  createdBy       User?           @relation("InterviewCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  updatedBy       User?           @relation("InterviewUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
-  parentInterview Interview?      @relation("InterviewRounds", fields: [parentInterviewId], references: [id], onDelete: Cascade)
-  childRounds     Interview[]     @relation("InterviewRounds")
+  decision      InterviewDecision @default(PENDING)
+  decisionNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  application     Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  company         Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  candidate       User                @relation("CandidateInterviews", fields: [candidateId], references: [id], onDelete: Cascade)
+  job             Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  scheduledBy     User                @relation("ScheduledInterviews", fields: [scheduledById], references: [id], onDelete: SetNull)
+  createdBy       User?               @relation("InterviewCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy       User?               @relation("InterviewUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  parentInterview Interview?          @relation("InterviewRounds", fields: [parentInterviewId], references: [id], onDelete: Cascade)
+  childRounds     Interview[]         @relation("InterviewRounds")
   feedbacks       InterviewFeedback[]
   history         InterviewHistory[]
 
@@ -495,8 +496,8 @@ model InterviewFeedback {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
-  interview           Interview            @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  interviewer         User                 @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewer User      @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
 
   @@unique([interviewId, interviewerId])
   @@index([interviewId])
@@ -512,20 +513,20 @@ enum InterviewHistoryAction {
 }
 
 model InterviewHistory {
-  id              String                 @id @default(uuid())
-  interviewId     String
-  action          InterviewHistoryAction
-  oldScheduledAt  DateTime?
-  newScheduledAt  DateTime?
-  oldStatus       InterviewStatus?
-  newStatus       InterviewStatus?
-  reason          String
-  performedById   String
-  metadata        Json?
-  createdAt       DateTime               @default(now())
+  id             String                 @id @default(uuid())
+  interviewId    String
+  action         InterviewHistoryAction
+  oldScheduledAt DateTime?
+  newScheduledAt DateTime?
+  oldStatus      InterviewStatus?
+  newStatus      InterviewStatus?
+  reason         String
+  performedById  String
+  metadata       Json?
+  createdAt      DateTime               @default(now())
 
-  interview       Interview              @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  performedBy     User                   @relation(fields: [performedById], references: [id], onDelete: Cascade)
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  performedBy User      @relation(fields: [performedById], references: [id], onDelete: Cascade)
 
   @@index([interviewId])
   @@index([performedById])
@@ -542,55 +543,55 @@ enum OfferStatus {
 }
 
 model Offer {
-  id               String       @id @default(uuid())
-  applicationId    String       @unique
-  companyId        String
-  candidateId      String
-  jobId            String
-  status           OfferStatus  @default(DRAFT)
-  
+  id            String      @id @default(uuid())
+  applicationId String      @unique
+  companyId     String
+  candidateId   String
+  jobId         String
+  status        OfferStatus @default(DRAFT)
+
   jobTitle         String
   department       String
   employmentType   EmploymentType
   salary           Float
-  currency         String       @default("USD")
+  currency         String         @default("USD")
   joiningDate      DateTime
   location         String
   reportingManager String
   notes            String?
   validUntil       DateTime
-  
-  createdById      String
-  updatedById      String?
-  approvedById     String?
-  sentById         String?
-  
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  deletedAt        DateTime?
-  approvedAt       DateTime?
-  sentAt           DateTime?
-  acceptedAt       DateTime?
-  rejectedAt       DateTime?
+
+  createdById  String
+  updatedById  String?
+  approvedById String?
+  sentById     String?
+
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  deletedAt                DateTime?
+  approvedAt               DateTime?
+  sentAt                   DateTime?
+  acceptedAt               DateTime?
+  rejectedAt               DateTime?
   candidateResponseMessage String?
-  rejectionReason  String?
-  expiredAt        DateTime?
-  revokedAt        DateTime?
-  revokedById      String?
-  revocationReason String?
+  rejectionReason          String?
+  expiredAt                DateTime?
+  revokedAt                DateTime?
+  revokedById              String?
+  revocationReason         String?
 
-  application      Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  company          Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  candidate        User         @relation("CandidateOffers", fields: [candidateId], references: [id], onDelete: Cascade)
-  job              Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  createdBy        User         @relation("CreatedOffers", fields: [createdById], references: [id], onDelete: Restrict)
-  updatedBy        User?        @relation("UpdatedOffers", fields: [updatedById], references: [id], onDelete: Restrict)
-  approvedBy       User?        @relation("ApprovedOffers", fields: [approvedById], references: [id], onDelete: SetNull)
-  sentBy           User?        @relation("SentOffers", fields: [sentById], references: [id], onDelete: SetNull)
-  revokedBy        User?        @relation("RevokedOffers", fields: [revokedById], references: [id], onDelete: SetNull)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  candidate   User        @relation("CandidateOffers", fields: [candidateId], references: [id], onDelete: Cascade)
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdBy   User        @relation("CreatedOffers", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy   User?       @relation("UpdatedOffers", fields: [updatedById], references: [id], onDelete: Restrict)
+  approvedBy  User?       @relation("ApprovedOffers", fields: [approvedById], references: [id], onDelete: SetNull)
+  sentBy      User?       @relation("SentOffers", fields: [sentById], references: [id], onDelete: SetNull)
+  revokedBy   User?       @relation("RevokedOffers", fields: [revokedById], references: [id], onDelete: SetNull)
 
-  timelines        OfferTimeline[]
-  auditLogs        OfferAuditLog[]
+  timelines OfferTimeline[]
+  auditLogs OfferAuditLog[]
 
   @@index([companyId])
   @@index([candidateId])
@@ -614,13 +615,13 @@ model Permission {
 }
 
 model RolePermission {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   role         Role
   permissionId String
-  createdAt    DateTime   @default(now())
-  
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-  
+  createdAt    DateTime @default(now())
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
   @@unique([role, permissionId])
   @@index([role])
 }
@@ -628,15 +629,15 @@ model RolePermission {
 model OfferTimeline {
   id              String   @id @default(uuid())
   offerId         String
-  type            String   
+  type            String
   title           String
   description     String
   performedById   String?
   performedByRole String?
   createdAt       DateTime @default(now())
 
-  offer           Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  performedBy     User?    @relation(fields: [performedById], references: [id], onDelete: SetNull)
+  offer       Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  performedBy User? @relation(fields: [performedById], references: [id], onDelete: SetNull)
 
   @@index([offerId])
   @@index([performedById])
@@ -645,19 +646,70 @@ model OfferTimeline {
 model OfferAuditLog {
   id              String   @id @default(uuid())
   offerId         String
-  action          String   
+  action          String
   performedById   String?
   performedByRole String?
-  field           String?  
+  field           String?
   oldValue        String?
   newValue        String?
   ipAddress       String?
   userAgent       String?
   createdAt       DateTime @default(now())
 
-  offer           Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
-  performedBy     User?    @relation(fields: [performedById], references: [id], onDelete: SetNull)
+  offer       Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  performedBy User? @relation(fields: [performedById], references: [id], onDelete: SetNull)
 
   @@index([offerId])
   @@index([performedById])
+}
+
+enum NotificationType {
+  INTERVIEW
+  OFFER
+  APPLICATION
+  JOB
+  AUTH
+  SYSTEM
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  SMS
+  PUSH
+  WHATSAPP
+  SLACK
+}
+
+enum NotificationStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  READ
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  companyId String
+  userId    String
+  type      NotificationType
+  channel   NotificationChannel
+  title     String
+  message   String
+  status    NotificationStatus  @default(PENDING)
+  payload   Json?
+  isRead    Boolean             @default(false)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  deletedAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([isRead])
 }
