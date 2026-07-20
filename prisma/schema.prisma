@@ -758,6 +758,8 @@ model ActivityLog {
 
   createdAt       DateTime       @default(now())
   deletedAt       DateTime?
+  retentionUntil  DateTime?
+  archivedAt      DateTime?
 
   company         Company?       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -768,4 +770,6 @@ model ActivityLog {
   @@index([entityId])
   @@index([action])
   @@index([createdAt])
+  @@index([retentionUntil])
+  @@index([archivedAt])
 }

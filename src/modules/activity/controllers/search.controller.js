@@ -1,4 +1,5 @@
 import { searchActivitiesWorkflow } from "../workflows/searchActivities.workflow.js";
+import { recordMetric } from "../services/metrics.service.js";
 
 /**
  * @desc    Search and filter activity logs
@@ -35,7 +36,9 @@ export const searchActivities = async (req, res, next) => {
       endDate
     };
 
+    const start = Date.now();
     const results = await searchActivitiesWorkflow(req.user, filters);
+    recordMetric("search_activities_latency_ms", Date.now() - start, { query: q, user: req.user.id });
 
     res.status(200).json({
       success: true,

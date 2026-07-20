@@ -6,59 +6,43 @@ export const createActivityLog = async (data) => {
   });
 };
 
+const DEFAULT_SELECT = {
+  id: true,
+  entityType: true,
+  entityId: true,
+  action: true,
+  oldValue: true,
+  newValue: true,
+  metadata: true,
+  ipAddress: true,
+  userAgent: true,
+  performedByRole: true,
+  userId: true,
+  createdAt: true,
+};
+
 export const getActivityLogById = async (companyId, activityId) => {
   return prisma.activityLog.findFirst({
     where: {
       id: activityId,
       companyId,
-      deletedAt: null
-    }
+      deletedAt: null,
+      archivedAt: null
+    },
+    select: DEFAULT_SELECT
   });
 };
 
-export const getActivityLogs = async (companyId, filters = {}) => {
-  const { userId, entityType, entityId, action, startDate, endDate, page = 1, limit = 10, sort = "desc" } = filters;
-  
-  const skip = (page - 1) * limit;
-  
+const buildSearchWhere = (companyId, filters) => {
+  const { q, entityType, entityId, action, userId, performedByRole, startDate, endDate } = filters;
+
   const where = {
     companyId,
     deletedAt: null,
+    archivedAt: null, // Universally filter out archived logs from active queries
     ...(userId && { userId }),
     ...(entityType && { entityType }),
     ...(entityId && { entityId }),
-    ...(action && { action })
-  };
-
-  if (startDate || endDate) {
-    where.createdAt = {};
-    if (startDate) where.createdAt.gte = new Date(startDate);
-    if (endDate) where.createdAt.lte = new Date(endDate);
-  }
-
-  const orderBy = { createdAt: sort === "asc" ? "asc" : "desc" };
-
-  const [total, data] = await Promise.all([
-    prisma.activityLog.count({ where }),
-    prisma.activityLog.findMany({
-      where,
-      orderBy,
-      skip: Number(skip),
-      take: Number(limit)
-    })
-  ]);
-
-  return { total, data, page: Number(page), limit: Number(limit) };
-};
-
-const buildSearchWhere = (companyId, filters) => {
-  const { q, entityType, action, userId, performedByRole, startDate, endDate } = filters;
-
-  const where = {
-    companyId,
-    deletedAt: null,
-    ...(userId && { userId }),
-    ...(entityType && { entityType }),
     ...(action && { action }),
     ...(performedByRole && { performedByRole })
   };
@@ -83,6 +67,27 @@ const buildSearchWhere = (companyId, filters) => {
   return where;
 };
 
+export const getActivityLogs = async (companyId, filters = {}) => {
+  const { page = 1, limit = 10, sort = "desc" } = filters;
+  
+  const skip = (page - 1) * limit;
+  const where = buildSearchWhere(companyId, filters);
+  const orderBy = { createdAt: sort === "asc" ? "asc" : "desc" };
+
+  const [total, data] = await Promise.all([
+    prisma.activityLog.count({ where }),
+    prisma.activityLog.findMany({
+      where,
+      orderBy,
+      skip: Number(skip),
+      take: Number(limit),
+      select: DEFAULT_SELECT
+    })
+  ]);
+
+  return { total, data, page: Number(page), limit: Number(limit) };
+};
+
 export const searchActivityLogs = async (companyId, filters = {}) => {
   const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = filters;
   
@@ -97,7 +102,8 @@ export const searchActivityLogs = async (companyId, filters = {}) => {
       where,
       orderBy,
       skip: Number(skip),
-      take: Number(limit)
+      take: Number(limit),
+      select: DEFAULT_SELECT
     })
   ]);
 
@@ -114,6 +120,7 @@ export const getExportActivityLogs = async (companyId, filters = {}) => {
   // In a very large dataset, this should be paginated/streamed, but Prisma findMany is fine for typical sizes.
   return prisma.activityLog.findMany({
     where,
-    orderBy
+    orderBy,
+    select: DEFAULT_SELECT
   });
 };

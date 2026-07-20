@@ -3,7 +3,7 @@ import AppError from "../../../utils/AppError.js";
 import { ACTIVITY_ENTITIES, ACTIVITY_ACTIONS } from "../constants/activity.constants.js";
 
 export const logActivity = async (payload) => {
-  const { companyId, userId, entityType, entityId, action, oldValue, newValue, metadata, ipAddress, userAgent, performedByRole } = payload;
+  const { companyId, userId, entityType, entityId, action, oldValue, newValue, metadata, ipAddress, userAgent, performedByRole, retentionDays } = payload;
   
   if (!entityType || !ACTIVITY_ENTITIES[entityType]) {
     throw new AppError("Invalid Activity Entity Type", 400);
@@ -11,6 +11,14 @@ export const logActivity = async (payload) => {
   
   if (!action || !ACTIVITY_ACTIONS[action]) {
     throw new AppError("Invalid Activity Action", 400);
+  }
+
+  // Calculate retention period if provided
+  let retentionUntil = null;
+  if (retentionDays) {
+    const date = new Date();
+    date.setDate(date.getDate() + retentionDays);
+    retentionUntil = date;
   }
 
   // This function might be called in the background without waiting,
@@ -27,7 +35,8 @@ export const logActivity = async (payload) => {
       metadata: metadata || null,
       ipAddress: ipAddress || null,
       userAgent: userAgent || null,
-      performedByRole: performedByRole || null
+      performedByRole: performedByRole || null,
+      retentionUntil
     });
   } catch (error) {
     console.error("[ActivityLog] Failed to log activity:", error);

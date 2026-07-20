@@ -1,4 +1,5 @@
 import { executeGetActivities, executeGetActivityById } from "../workflows/activityLog.workflow.js";
+import { recordMetric } from "../services/metrics.service.js";
 
 export const getActivities = async (req, res, next) => {
   try {
@@ -6,7 +7,9 @@ export const getActivities = async (req, res, next) => {
     const companyId = req.user.companyId || req.user.id; // Support both HR and Company Owner
     const filters = req.query;
 
+    const start = Date.now();
     const activities = await executeGetActivities(companyId, filters);
+    recordMetric("activity_fetch_latency_ms", Date.now() - start, { user: req.user.id });
 
     res.status(200).json({
       success: true,
