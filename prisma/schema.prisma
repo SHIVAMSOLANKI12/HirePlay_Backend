@@ -718,6 +718,7 @@ enum ActivityEntity {
   OFFER
   NOTIFICATION
   SYSTEM
+  RESUME
 }
 
 enum ActivityAction {
@@ -740,6 +741,8 @@ enum ActivityAction {
   REJECT
   PUBLISH
   CLOSE
+  PREVIEW
+  DOWNLOAD
 }
 
 model ActivityLog {

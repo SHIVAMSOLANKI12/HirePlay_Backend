@@ -36,5 +36,9 @@ export const ACTIVITY_EVENTS = {
 
   // Notifications
   NOTIFICATION_EMAIL_SENT: "notification.email_sent",
-  NOTIFICATION_EMAIL_FAILED: "notification.email_failed"
+  NOTIFICATION_EMAIL_FAILED: "notification.email_failed",
+
+  // Resumes
+  RESUME_PREVIEWED: "resume.previewed",
+  RESUME_DOWNLOADED: "resume.downloaded"
 };

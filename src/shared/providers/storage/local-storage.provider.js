@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import { StorageProvider } from "./storage.provider.js";
 
@@ -48,5 +49,36 @@ export class LocalStorageProvider extends StorageProvider {
       }
       // If file doesn't exist, we can ignore it
     }
+  }
+
+  /**
+   * Get a read stream for a file
+   * @param {string} key - The file storage key (filename)
+   * @param {string} destination - The directory where the file is stored
+   * @returns {import("fs").ReadStream}
+   */
+  getReadStream(key, destination) {
+    // Prevent path traversal
+    const safeKey = path.basename(key);
+    const filePath = path.join(destination, safeKey);
+    
+    if (!fsSync.existsSync(filePath)) {
+      throw new Error("File not found on disk");
+    }
+    
+    return fsSync.createReadStream(filePath);
+  }
+
+  /**
+   * Get metadata of a file
+   * @param {string} key - The file storage key
+   * @param {string} destination - The directory
+   * @returns {Promise<{ size: number }>}
+   */
+  async getFileMetadata(key, destination) {
+    const safeKey = path.basename(key);
+    const filePath = path.join(destination, safeKey);
+    const stat = await fs.stat(filePath);
+    return { size: stat.size };
   }
 }
