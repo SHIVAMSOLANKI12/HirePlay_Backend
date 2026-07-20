@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { findCompanyByOwnerId } from "../../company/repositories/company.repository.js";
 import { findHRByEmail, createHR } from "../repositories/hr.repository.js";
 import bcrypt from "bcrypt";
@@ -43,6 +45,14 @@ export const createHRService = async (ownerId, payload) => {
     CompanyName: existingCompany.name,
     LoginLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
     recipientEmail: newHR.email // Email service will use this to send to HR directly
+  });
+
+  eventEngine.emit(ACTIVITY_EVENTS.HR_CREATED, {
+    userId: ownerId,
+    companyId: existingCompany.id,
+    entityId: newHR.id,
+    performedByRole: "COMPANY_OWNER",
+    metadata: { hrEmail: newHR.email }
   });
 
   // Return DTO

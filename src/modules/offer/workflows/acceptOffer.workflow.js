@@ -4,6 +4,8 @@ import { toOfferStatusDTO } from "../mappers/offer.mapper.js";
 import { validateOfferExists, validateOfferStatus, validateOfferNotExpired, validateOfferNotRevoked } from "../services/offer.validation.service.js";
 import prisma from "../../../config/prisma.js";
 import { logOfferTimeline } from "../services/offerAudit.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 export const acceptOfferWorkflow = async (user, offerId, data) => {
   let offer = await getCandidateOffer(user.id, offerId);
@@ -18,18 +20,14 @@ export const acceptOfferWorkflow = async (user, offerId, data) => {
 
   const updatedOffer = await acceptOffer(offerId, data.message || "");
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      companyId: offer.companyId,
-      applicationId: offer.applicationId,
-      jobId: offer.jobId,
-      type: "OFFER_ACCEPTED",
-      title: "Offer Accepted",
-      description: `Candidate has accepted the offer.`,
-      metadata: { offerId: updatedOffer.id, message: data.message }
-    }
+  eventEngine.emit(ACTIVITY_EVENTS.OFFER_ACCEPTED, {
+    userId: user.id,
+    companyId: offer.companyId,
+    entityId: updatedOffer.id,
+    performedByRole: "CANDIDATE",
+    oldValue: { status: offer.status },
+    newValue: { status: updatedOffer.status, title: "Offer Accepted", description: `Candidate has accepted the offer.` },
+    metadata: { applicationId: offer.applicationId, jobId: offer.jobId, message: data.message }
   });
 
   await logOfferTimeline(

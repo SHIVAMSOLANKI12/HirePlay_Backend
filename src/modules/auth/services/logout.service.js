@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import {
   findRefreshToken,
   revokeRefreshToken,
@@ -16,6 +18,12 @@ export const logoutService = async (refreshToken) => {
   }
 
   await revokeRefreshToken(refreshToken);
+
+  eventEngine.emit(ACTIVITY_EVENTS.AUTH_LOGOUT, {
+    userId: token.userId,
+    performedByRole: "CANDIDATE",
+    metadata: { source: "CANDIDATE_LOGOUT" }
+  });
 
   return;
 };

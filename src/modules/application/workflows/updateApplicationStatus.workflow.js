@@ -1,6 +1,8 @@
 import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
 import { findApplicationById, updateApplicationStatus } from "../repositories/application.repository.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
 import { isTransitionAllowed } from "../../shared/services/applicationStatusTransition.service.js";
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
@@ -38,29 +40,15 @@ export const updateApplicationStatusWorkflow = async (user, applicationId, reque
       metadata,
     }, tx);
 
-    // Track reusable ActivityLog for dashboards
-    const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
-    const statusToTypeMap = {
-      [APPLICATION_STATUS.SCREENING]: "APPLICATION_REVIEWED",
-      [APPLICATION_STATUS.SHORTLISTED]: "APPLICATION_SHORTLISTED",
-      [APPLICATION_STATUS.INTERVIEW]: "INTERVIEW_SCHEDULED",
-      [APPLICATION_STATUS.OFFERED]: "OFFER_SENT",
-      [APPLICATION_STATUS.HIRED]: "HIRED",
-      [APPLICATION_STATUS.REJECTED]: "APPLICATION_REJECTED",
-    };
-    
-    if (statusToTypeMap[requestedStatus]) {
-      await createActivityLog({
-        userId: application.candidateId,
-        companyId: application.job.company.id,
-        applicationId: app.id,
-        jobId: application.jobId,
-        type: statusToTypeMap[requestedStatus],
-        title: `Status Updated to ${requestedStatus}`,
-        description: `Application status changed to ${requestedStatus}.`,
-        metadata: metadata || null,
-      }, tx);
-    }
+    eventEngine.emit(ACTIVITY_EVENTS.APPLICATION_STATUS_CHANGED, {
+      userId: application.candidateId,
+      companyId: application.job.company.id,
+      entityId: app.id,
+      performedByRole: user.role,
+      oldValue: { status: application.status },
+      newValue: { status: requestedStatus },
+      metadata: { jobId: application.jobId, ...metadata }
+    });
 
     // 5. Trigger Event Hooks (Placeholders)
     await onStatusChanged(app, requestedStatus, tx);

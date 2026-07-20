@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { findCompanyByOwnerId } from "../../company/repositories/company.repository.js";
 import { findHRById, softDeleteHR } from "../repositories/hr.repository.js";
 
@@ -18,6 +20,14 @@ export const softDeleteHRService = async (ownerId, hrId) => {
 
   // Soft delete the HR
   await softDeleteHR(hrId);
+
+  eventEngine.emit(ACTIVITY_EVENTS.HR_DELETED, {
+    userId: ownerId,
+    companyId: existingCompany.id,
+    entityId: hrId,
+    performedByRole: "COMPANY_OWNER",
+    metadata: { hrEmail: hr.email }
+  });
 
   return true;
 };

@@ -1,5 +1,6 @@
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
-import { createActivityLog } from "../../activity/services/activityLog.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 /**
  * Hook triggered when an interview is rescheduled.
@@ -19,17 +20,15 @@ export const onInterviewRescheduled = async (interview, history, user, tx) => {
     },
   }, tx);
 
-  // Activity Log (Dashboard/Timeline)
-  await createActivityLog({
+  eventEngine.emit(ACTIVITY_EVENTS.INTERVIEW_RESCHEDULED, {
     userId: interview.candidateId,
     companyId: interview.companyId,
-    applicationId: interview.applicationId,
-    jobId: interview.jobId,
-    type: "INTERVIEW_RESCHEDULED",
-    title: `Interview Rescheduled`,
-    description: `Interview "${interview.title}" has been rescheduled to ${new Date(history.newScheduledAt).toLocaleString()}. Reason: ${history.reason}`,
-    metadata: { interviewId: interview.id, historyId: history.id },
-  }, tx);
+    entityId: interview.id,
+    performedByRole: user.role,
+    oldValue: { scheduledAt: history.oldScheduledAt },
+    newValue: { scheduledAt: history.newScheduledAt, title: "Interview Rescheduled", description: `Interview "${interview.title}" has been rescheduled to ${new Date(history.newScheduledAt).toLocaleString()}. Reason: ${history.reason}` },
+    metadata: { historyId: history.id }
+  });
   
   // Trigger Notification Module
   const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
@@ -67,17 +66,14 @@ export const onInterviewCancelled = async (interview, history, user, tx) => {
     },
   }, tx);
 
-  // Activity Log (Dashboard/Timeline)
-  await createActivityLog({
+  eventEngine.emit(ACTIVITY_EVENTS.INTERVIEW_CANCELLED, {
     userId: interview.candidateId,
     companyId: interview.companyId,
-    applicationId: interview.applicationId,
-    jobId: interview.jobId,
-    type: "INTERVIEW_CANCELLED",
-    title: `Interview Cancelled`,
-    description: `Interview "${interview.title}" has been cancelled. Reason: ${history.reason}`,
-    metadata: { interviewId: interview.id, historyId: history.id },
-  }, tx);
+    entityId: interview.id,
+    performedByRole: user.role,
+    newValue: { title: "Interview Cancelled", description: `Interview "${interview.title}" has been cancelled. Reason: ${history.reason}` },
+    metadata: { historyId: history.id }
+  });
 
   // Trigger Notification Module
   const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");

@@ -5,6 +5,8 @@ import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJ
 import { validateOfferExists, validateOfferStatus } from "../services/offer.validation.service.js";
 import prisma from "../../../config/prisma.js";
 import { logOfferTimeline } from "../services/offerAudit.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 export const sendOfferWorkflow = async (user, offerId) => {
   if (user.role !== "COMPANY_ADMIN" && user.role !== "HR") {
@@ -19,18 +21,14 @@ export const sendOfferWorkflow = async (user, offerId) => {
 
   const updatedOffer = await sendOffer(offerId, user.id);
 
-  // Log activity
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      companyId: existingOffer.companyId,
-      applicationId: existingOffer.applicationId,
-      jobId: existingOffer.jobId,
-      type: "OFFER_SENT",
-      title: "Offer Sent",
-      description: `Offer has been sent to candidate.`,
-      metadata: { offerId: updatedOffer.id }
-    }
+  eventEngine.emit(ACTIVITY_EVENTS.OFFER_SENT, {
+    userId: user.id,
+    companyId: existingOffer.companyId,
+    entityId: updatedOffer.id,
+    performedByRole: user.role,
+    oldValue: { status: existingOffer.status },
+    newValue: { status: updatedOffer.status, title: "Offer Sent", description: `Offer has been sent to candidate.` },
+    metadata: { applicationId: existingOffer.applicationId, jobId: existingOffer.jobId }
   });
 
   await logOfferTimeline(

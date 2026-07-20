@@ -1,5 +1,7 @@
 import AppError from "../../../../utils/AppError.js";
 import { generateHRAccessToken, generateHRRefreshToken } from "../../../../utils/jwt.js";
+import { eventEngine } from "../../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../../activity/constants/activity.events.js";
 import { env } from "../../../../config/env.js";
 import { toLoginResponseDTO } from "../mappers/auth.mapper.js";
 import { updateLastLogin, updateRefreshToken } from "../repositories/auth.repository.js";
@@ -26,6 +28,13 @@ export const executeHRLogin = async (email, password) => {
   expiresAt.setDate(expiresAt.getDate() + env.REFRESH_TOKEN_EXPIRES_DAYS);
   
   await updateRefreshToken(hr.id, hashedRefreshToken, expiresAt);
+
+  eventEngine.emit(ACTIVITY_EVENTS.AUTH_LOGIN, {
+    userId: hr.id,
+    companyId: hr.companyId,
+    performedByRole: hr.role,
+    metadata: { source: "HR_LOGIN" }
+  });
 
   return toLoginResponseDTO(hr, accessToken, refreshToken);
 };

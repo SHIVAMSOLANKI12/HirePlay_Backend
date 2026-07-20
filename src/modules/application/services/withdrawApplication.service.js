@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { findApplicationByIdAndCandidateId, withdrawApplication } from "../repositories/application.repository.js";
 import { isTransitionAllowed } from "../../shared/services/applicationStatusTransition.service.js";
 import { verifyCandidateOwnership } from "../../shared/services/verifyCandidateOwnership.service.js";
@@ -43,18 +45,15 @@ export const withdrawApplicationService = async (applicationId, candidateId) => 
       metadata: { reason: "Candidate withdrew application" },
     }, tx);
 
-    // Track reusable ActivityLog for dashboards
-    const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
-    await createActivityLog({
+    eventEngine.emit(ACTIVITY_EVENTS.APPLICATION_WITHDRAWN, {
       userId: candidateId,
       companyId: application.job.companyId,
-      applicationId: app.id,
-      jobId: application.jobId,
-      type: "APPLICATION_WITHDRAWN",
-      title: "Application Withdrawn",
-      description: `You withdrew your application.`,
-      metadata: null,
-    }, tx);
+      entityId: app.id,
+      performedByRole: "CANDIDATE",
+      oldValue: { status: application.status },
+      newValue: { status: "WITHDRAWN" },
+      metadata: { jobId: application.jobId }
+    });
 
     return app;
   });

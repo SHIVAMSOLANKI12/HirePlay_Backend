@@ -5,6 +5,8 @@ import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJ
 import { validateOfferExists, validateOfferStatus } from "../services/offer.validation.service.js";
 import prisma from "../../../config/prisma.js";
 import { logOfferTimeline } from "../services/offerAudit.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 export const approveOfferWorkflow = async (user, offerId) => {
   if (user.role !== "COMPANY_ADMIN") {
@@ -19,19 +21,14 @@ export const approveOfferWorkflow = async (user, offerId) => {
 
   const updatedOffer = await approveOffer(offerId, user.id);
 
-  // In a real scenario, you'd add an activity log here using prisma.$transaction
-  // Or handle it in an async event emitter
-  await prisma.activityLog.create({
-    data: {
-      userId: user.id,
-      companyId: existingOffer.job.companyId || existingOffer.companyId,
-      applicationId: existingOffer.applicationId,
-      jobId: existingOffer.jobId,
-      type: "OFFER_APPROVED",
-      title: "Offer Approved",
-      description: `Offer has been approved.`,
-      metadata: { offerId: updatedOffer.id }
-    }
+  eventEngine.emit(ACTIVITY_EVENTS.OFFER_APPROVED, {
+    userId: user.id,
+    companyId: existingOffer.job.companyId || existingOffer.companyId,
+    entityId: updatedOffer.id,
+    performedByRole: user.role,
+    oldValue: { status: existingOffer.status },
+    newValue: { status: updatedOffer.status, title: "Offer Approved", description: `Offer has been approved.` },
+    metadata: { applicationId: existingOffer.applicationId, jobId: existingOffer.jobId }
   });
 
   await logOfferTimeline(

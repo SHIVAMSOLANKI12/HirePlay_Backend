@@ -5,7 +5,8 @@ import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJ
 import { createInterview, findConflictingInterview } from "../repositories/interview.repository.js";
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
 import { APPLICATION_STATUS } from "../../shared/constants/applicationStatus.constants.js";
-import { createActivityLog } from "../../activity/services/activityLog.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 /**
  * Orchestrates the creation of a new Interview.
@@ -69,16 +70,14 @@ export const scheduleInterviewWorkflow = async (user, data) => {
       metadata: { interviewId: interview.id, title: interview.title, type: interview.type, scheduledAt: interview.scheduledAt },
     }, tx);
 
-    await createActivityLog({
+    eventEngine.emit(ACTIVITY_EVENTS.INTERVIEW_SCHEDULED, {
       userId: application.candidateId,
       companyId: application.job.companyId,
-      applicationId: application.id,
-      jobId: application.jobId,
-      type: "INTERVIEW_SCHEDULED",
-      title: "Interview Scheduled",
-      description: `An interview "${interview.title}" has been scheduled.`,
-      metadata: { interviewId: interview.id },
-    }, tx);
+      entityId: interview.id,
+      performedByRole: user.role,
+      newValue: { title: "Interview Scheduled", description: `An interview "${interview.title}" has been scheduled.` },
+      metadata: { applicationId: application.id, jobId: application.jobId }
+    });
 
     // We fetch the newly created interview with all relationships for the mapper
     const populatedInterview = await tx.interview.findUnique({

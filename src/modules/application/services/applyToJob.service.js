@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { findJobByIdForCandidate } from "../../job/repositories/job.repository.js";
 import { findExistingApplication, createApplication } from "../repositories/application.repository.js";
 import { findResumeById } from "../../resume/repositories/resume.repository.js";
@@ -62,18 +64,13 @@ export const applyToJob = async (candidateId, jobId, applicationData) => {
       },
     }, tx);
 
-    // Track reusable ActivityLog for dashboards
-    const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
-    await createActivityLog({
+    eventEngine.emit(ACTIVITY_EVENTS.APPLICATION_APPLIED, {
       userId: candidateId,
       companyId: job.companyId,
-      applicationId: app.id,
-      jobId: job.id,
-      type: "APPLICATION_SUBMITTED",
-      title: "Application Submitted",
-      description: `You applied for ${job.title}.`,
-      metadata: null,
-    }, tx);
+      entityId: app.id,
+      performedByRole: "CANDIDATE",
+      metadata: { jobId: job.id, jobTitle: job.title }
+    });
 
     return app;
   });

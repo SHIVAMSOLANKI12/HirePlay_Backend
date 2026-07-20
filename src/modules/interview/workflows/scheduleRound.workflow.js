@@ -6,7 +6,8 @@ import {
   createInterview 
 } from "../repositories/interview.repository.js";
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
-import { createActivityLog } from "../../activity/services/activityLog.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { verifyInterviewAccess } from "../services/interview.validation.service.js";
 
 /**
@@ -75,16 +76,14 @@ export const scheduleRoundWorkflow = async (user, parentInterviewId, data) => {
       },
     }, tx);
 
-    await createActivityLog({
+    eventEngine.emit(ACTIVITY_EVENTS.INTERVIEW_SCHEDULED, {
       userId: parentInterview.candidateId,
       companyId: parentInterview.companyId,
-      applicationId: parentInterview.applicationId,
-      jobId: parentInterview.jobId,
-      type: "INTERVIEW_SCHEDULED",
-      title: `Interview Round ${round.roundNumber} Scheduled`,
-      description: `Round ${round.roundNumber} (${round.title}) has been scheduled.`,
-      metadata: { interviewId: round.id, roundNumber: round.roundNumber },
-    }, tx);
+      entityId: round.id,
+      performedByRole: user.role,
+      newValue: { title: `Interview Round ${round.roundNumber} Scheduled`, description: `Round ${round.roundNumber} (${round.title}) has been scheduled.` },
+      metadata: { applicationId: parentInterview.applicationId, jobId: parentInterview.jobId, roundNumber: round.roundNumber }
+    });
 
     // Fetch the newly created round with minimal relations for response
     return await tx.interview.findUnique({

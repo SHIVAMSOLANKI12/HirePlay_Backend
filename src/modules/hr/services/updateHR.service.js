@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { findCompanyByOwnerId } from "../../company/repositories/company.repository.js";
 import { findHRById, updateHR } from "../repositories/hr.repository.js";
 import HRDTO from "../dto/hr.dto.js";
@@ -18,6 +20,14 @@ export const updateHRService = async (ownerId, hrId, payload) => {
 
   // Update HR
   const updatedHR = await updateHR(hrId, payload);
+
+  eventEngine.emit(ACTIVITY_EVENTS.HR_UPDATED, {
+    userId: ownerId,
+    companyId: existingCompany.id,
+    entityId: hrId,
+    performedByRole: "COMPANY_OWNER",
+    metadata: { updatedFields: Object.keys(payload) }
+  });
 
   // Return mapped DTO
   return HRDTO.toResponse(updatedHR);

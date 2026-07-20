@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { findCompanyByOwnerId } from "../../company/repositories/company.repository.js";
 import { createJob } from "../repositories/job.repository.js";
 import JobMapper from "../mappers/job.mapper.js";
@@ -23,17 +25,13 @@ export const createJobService = async (user, payload) => {
 
   const newJob = await createJob(jobData);
 
-  // Track reusable ActivityLog for dashboards
-  const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
-  await createActivityLog({
-    userId: user.id, // Using global auth tracking ID
+  eventEngine.emit(ACTIVITY_EVENTS.JOB_CREATED, {
+    userId: user.id,
     companyId: companyId,
-    applicationId: null,
-    jobId: newJob.id,
-    type: "JOB_CREATED",
-    title: "Job Created",
-    description: `Created new job: ${newJob.title}.`,
-    metadata: { createdByHR: user.role === "HR", hrEmail: user.email },
+    entityId: newJob.id,
+    performedByRole: user.role,
+    newValue: { title: newJob.title, description: `Created new job: ${newJob.title}.` },
+    metadata: { createdByHR: user.role === "HR", hrEmail: user.email }
   });
 
   const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");

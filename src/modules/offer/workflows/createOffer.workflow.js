@@ -3,6 +3,8 @@ import { validateOfferCreation } from "../services/offer.validation.service.js";
 import { createOffer } from "../repositories/offer.repository.js";
 import { toOfferDTO } from "../mappers/offer.mapper.js";
 import { logOfferTimeline } from "../services/offerAudit.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 export const createOfferWorkflow = async (user, data) => {
   // 1. Validation & Eligibility
@@ -36,18 +38,13 @@ export const createOfferWorkflow = async (user, data) => {
 
     const newOffer = await createOffer(offerData, tx);
 
-    // 4. Log Activity
-    await tx.activityLog.create({
-      data: {
-        userId: user.id,
-        companyId: application.job.companyId,
-        applicationId: application.id,
-        jobId: application.job.id,
-        type: "OFFER_DRAFTED",
-        title: "Offer Drafted",
-        description: `An offer has been drafted for candidate.`,
-        metadata: { offerId: newOffer.id }
-      }
+    eventEngine.emit(ACTIVITY_EVENTS.OFFER_CREATED, {
+      userId: user.id,
+      companyId: application.job.companyId,
+      entityId: newOffer.id,
+      performedByRole: user.role,
+      newValue: { title: "Offer Drafted", description: `An offer has been drafted for candidate.` },
+      metadata: { applicationId: application.id, jobId: application.job.id }
     });
 
     await tx.applicationActivity.create({

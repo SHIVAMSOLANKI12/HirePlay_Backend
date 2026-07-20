@@ -1,5 +1,7 @@
 import bcrypt from "bcrypt";
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 import {
   findUserByEmail,
@@ -42,10 +44,21 @@ export const loginService = async (data) => {
   });
 
   // Never send password
-  const { password, ...safeUser } = user;
+  const authUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
+  eventEngine.emit(ACTIVITY_EVENTS.AUTH_LOGIN, {
+    userId: user.id,
+    performedByRole: user.role,
+    metadata: { source: "CANDIDATE_LOGIN" }
+  });
 
   return {
-    user: safeUser,
+    user: authUser,
     accessToken,
     refreshToken,
   };

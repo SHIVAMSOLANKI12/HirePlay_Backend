@@ -4,7 +4,8 @@ import { findInterviewProcessWithRounds } from "../repositories/interview.reposi
 import { createFeedback, findFeedbackByInterviewer } from "../repositories/feedback.repository.js";
 import { verifyInterviewAccess } from "../services/interview.validation.service.js";
 import { logApplicationActivity } from "../../activity/services/activity.service.js";
-import { createActivityLog } from "../../activity/services/activityLog.service.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 
 /**
  * Orchestrates the creation of interview feedback.
@@ -54,16 +55,14 @@ export const createFeedbackWorkflow = async (user, interviewId, data) => {
       },
     }, tx);
 
-    await createActivityLog({
+    eventEngine.emit(ACTIVITY_EVENTS.INTERVIEW_FEEDBACK_SUBMITTED, {
       userId: interview.candidateId,
       companyId: interview.companyId,
-      applicationId: interview.applicationId,
-      jobId: interview.jobId,
-      type: "INTERVIEW_FEEDBACK_SUBMITTED",
-      title: `Feedback Submitted for Round ${interview.roundNumber}`,
-      description: `An interviewer has submitted feedback for Round ${interview.roundNumber} (${interview.title}).`,
-      metadata: { interviewId: interview.id, feedbackId: feedback.id },
-    }, tx);
+      entityId: interview.id,
+      performedByRole: user.role,
+      newValue: { title: "Interview Feedback Submitted", description: `Feedback has been submitted for interview "${interview.title}".` },
+      metadata: { feedbackId: feedback.id, recommendation: feedback.recommendation, overallRating: feedback.overallRating }
+    });
 
     return feedback;
   });

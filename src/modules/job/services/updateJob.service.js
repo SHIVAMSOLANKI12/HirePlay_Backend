@@ -1,4 +1,6 @@
 import AppError from "../../../utils/AppError.js";
+import { eventEngine } from "../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import { updateJob } from "../repositories/job.repository.js";
 import { verifyRecruiterJobAccess } from "../../shared/services/verifyRecruiterJobAccess.service.js";
 import JobDTO from "../dto/job.dto.js";
@@ -23,26 +25,20 @@ export const updateJobService = async (user, jobId, payload) => {
 
   const updatedJob = await updateJob(jobId, dataToUpdate);
 
-  // Track reusable ActivityLog for dashboards
-  const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
-  
-  // Distinguish between closing a job and general updates
-  let activityType = "JOB_UPDATED";
-  let title = "Job Updated";
+  let eventName = ACTIVITY_EVENTS.JOB_UPDATED;
   if (dataToUpdate.status === "CLOSED" && existingJob.status !== "CLOSED") {
-    activityType = "JOB_CLOSED";
-    title = "Job Closed";
+    eventName = ACTIVITY_EVENTS.JOB_CLOSED;
+  } else if (dataToUpdate.status === "PUBLISHED" && existingJob.status !== "PUBLISHED") {
+    eventName = ACTIVITY_EVENTS.JOB_PUBLISHED;
   }
 
-  await createActivityLog({
+  eventEngine.emit(eventName, {
     userId: user.id,
     companyId: existingJob.companyId,
-    applicationId: null,
-    jobId: updatedJob.id,
-    type: activityType,
-    title,
-    description: `Job "${updatedJob.title}" was ${activityType === "JOB_CLOSED" ? "closed" : "updated"}.`,
-    metadata: null,
+    entityId: updatedJob.id,
+    performedByRole: user.role,
+    oldValue: { status: existingJob.status },
+    newValue: { status: updatedJob.status, updatedFields: Object.keys(dataToUpdate) }
   });
 
   return JobDTO.toResponse(updatedJob);

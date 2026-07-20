@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import AppError from "../../../../utils/AppError.js";
+import { eventEngine } from "../../../notification/events/event.engine.js";
+import { ACTIVITY_EVENTS } from "../../../activity/constants/activity.events.js";
 import { findByResetToken, updatePassword, clearResetToken } from "../repositories/auth.repository.js";
 import { hashPassword, validatePasswordStrength } from "../services/auth.service.js";
 
@@ -20,6 +22,13 @@ export const executeHRResetPassword = async (plainToken, newPassword) => {
 
   // We should also clear the reset token specifically
   await clearResetToken(hr.id);
+
+  eventEngine.emit(ACTIVITY_EVENTS.AUTH_PASSWORD_RESET, {
+    userId: hr.id,
+    companyId: hr.companyId,
+    performedByRole: hr.role,
+    metadata: { source: "HR_PASSWORD_RESET" }
+  });
 
   return { message: "Password has been reset successfully. You can now login." };
 };
