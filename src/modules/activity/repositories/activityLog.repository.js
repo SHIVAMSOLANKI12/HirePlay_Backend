@@ -50,3 +50,70 @@ export const getActivityLogs = async (companyId, filters = {}) => {
 
   return { total, data, page: Number(page), limit: Number(limit) };
 };
+
+const buildSearchWhere = (companyId, filters) => {
+  const { q, entityType, action, userId, performedByRole, startDate, endDate } = filters;
+
+  const where = {
+    companyId,
+    deletedAt: null,
+    ...(userId && { userId }),
+    ...(entityType && { entityType }),
+    ...(action && { action }),
+    ...(performedByRole && { performedByRole })
+  };
+
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(startDate);
+    if (endDate) where.createdAt.lte = new Date(endDate);
+  }
+
+  if (q && q.trim() !== "") {
+    const searchString = q.trim();
+    where.OR = [
+      { entityType: { contains: searchString, mode: 'insensitive' } },
+      { action: { contains: searchString, mode: 'insensitive' } },
+      { entityId: { contains: searchString, mode: 'insensitive' } },
+      { userId: { contains: searchString, mode: 'insensitive' } },
+      { performedByRole: { contains: searchString, mode: 'insensitive' } }
+    ];
+  }
+
+  return where;
+};
+
+export const searchActivityLogs = async (companyId, filters = {}) => {
+  const { page = 1, limit = 10, sortBy = "createdAt", sortOrder = "desc" } = filters;
+  
+  const skip = (page - 1) * limit;
+  const where = buildSearchWhere(companyId, filters);
+
+  const orderBy = { [sortBy]: sortOrder === "asc" ? "asc" : "desc" };
+
+  const [total, data] = await Promise.all([
+    prisma.activityLog.count({ where }),
+    prisma.activityLog.findMany({
+      where,
+      orderBy,
+      skip: Number(skip),
+      take: Number(limit)
+    })
+  ]);
+
+  return { total, data, page: Number(page), limit: Number(limit) };
+};
+
+export const getExportActivityLogs = async (companyId, filters = {}) => {
+  const { sortBy = "createdAt", sortOrder = "desc" } = filters;
+  
+  const where = buildSearchWhere(companyId, filters);
+  const orderBy = { [sortBy]: sortOrder === "asc" ? "asc" : "desc" };
+
+  // For export, we might fetch all matching records.
+  // In a very large dataset, this should be paginated/streamed, but Prisma findMany is fine for typical sizes.
+  return prisma.activityLog.findMany({
+    where,
+    orderBy
+  });
+};

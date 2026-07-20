@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { getActivities, getActivityById } from "../controllers/activityLog.controller.js";
 import { getTimeline } from "../controllers/timeline.controller.js";
+import { searchActivities } from "../controllers/search.controller.js";
+import { exportActivities } from "../controllers/export.controller.js";
 import { requireAuth } from "../../../middleware/requireAuth.middleware.js";
 
 const router = Router();
@@ -13,6 +15,12 @@ router.route("/")
 
 router.route("/timeline/:entityType/:entityId")
   .get(getTimeline);
+
+router.route("/search")
+  .get(searchActivities);
+
+router.route("/export")
+  .get(exportActivities);
 
 // Kept this last so that /timeline isn't matched as /:id
 router.route("/:id")

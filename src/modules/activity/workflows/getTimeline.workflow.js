@@ -18,18 +18,10 @@ export const getTimelineWorkflow = async (user, entityType, entityId, filters) =
 
   const companyId = user.companyId || user.id; // Support both HR (companyId) and Company Admin (id)
 
-  // Map route entity type to database entity type (ACTIVITY_ENTITIES)
-  const typeMap = {
-    "application": ACTIVITY_ENTITIES.APPLICATION,
-    "job": ACTIVITY_ENTITIES.JOB,
-    "interview": ACTIVITY_ENTITIES.INTERVIEW,
-    "offer": ACTIVITY_ENTITIES.OFFER,
-    "hr": ACTIVITY_ENTITIES.HR,
-    "company": ACTIVITY_ENTITIES.COMPANY
-  };
-
   const isCandidate = entityType.toLowerCase() === "candidate";
-  const mappedEntityType = typeMap[entityType.toLowerCase()];
+  
+  // Dynamically resolve entity type from ACTIVITY_ENTITIES to make this fully generic for future modules
+  const mappedEntityType = ACTIVITY_ENTITIES[entityType.toUpperCase()];
 
   if (!isCandidate && !mappedEntityType) {
     throw new AppError(`Invalid entity type for timeline: ${entityType}`, 400);
