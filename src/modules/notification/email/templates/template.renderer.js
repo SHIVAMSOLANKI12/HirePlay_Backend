@@ -1,25 +1,47 @@
-/**
- * Replaces variables in a template string safely.
- * Expects variables in the format {{VariableName}}
- * 
- * @param {string} template - The HTML or Text template string
- * @param {Object} variables - Key-value pairs to replace
- * @returns {string} - The rendered string
- */
-export const renderTemplate = (template, variables = {}) => {
-  if (!template) return "";
+import fs from 'fs';
+import path from 'path';
+import Handlebars from 'handlebars';
+
+export const renderTemplate = (eventName, variables) => {
+  const templateDir = path.join(process.cwd(), 'src', 'modules', 'notification', 'email', 'templates', eventName);
   
-  let rendered = template;
-  
-  for (const [key, value] of Object.entries(variables)) {
-    // We use a global regex to replace all occurrences of {{key}}
-    const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
-    
-    // Basic sanitization to prevent breaking HTML (very simple for now)
-    const safeValue = value ? String(value).replace(/</g, "&lt;").replace(/>/g, "&gt;") : "";
-    
-    rendered = rendered.replace(regex, safeValue);
+  if (!fs.existsSync(templateDir)) {
+    throw new Error(`Template directory for event '${eventName}' does not exist.`);
   }
+
+  const subjectPath = path.join(templateDir, 'subject.hbs');
+  const htmlPath = path.join(templateDir, 'html.hbs');
+  const textPath = path.join(templateDir, 'text.hbs');
+
+  const subjectTemplate = Handlebars.compile(fs.readFileSync(subjectPath, 'utf8'));
+  const htmlTemplate = Handlebars.compile(fs.readFileSync(htmlPath, 'utf8'));
+  const textTemplate = Handlebars.compile(fs.readFileSync(textPath, 'utf8'));
+
+  const innerHtml = htmlTemplate(variables);
   
-  return rendered;
+  // Try to load base layout if we want to wrap the html
+  let finalHtml = innerHtml;
+  try {
+    const layoutPath = path.join(process.cwd(), 'src', 'modules', 'notification', 'email', 'templates', 'layout.hbs');
+    if (fs.existsSync(layoutPath)) {
+      const layoutTemplate = Handlebars.compile(fs.readFileSync(layoutPath, 'utf8'));
+      finalHtml = layoutTemplate({
+        ...variables,
+        BodyContent: innerHtml,
+        Year: new Date().getFullYear(),
+        PrimaryColor: variables.branding?.primaryColor || '#007bff',
+        LogoUrl: variables.branding?.logoUrl || null,
+        CompanyName: variables.branding?.companyName || variables['Company Name'] || 'HirePlay',
+        SupportEmail: variables.branding?.supportEmail || 'support@hireplay.com'
+      });
+    }
+  } catch (e) {
+    console.error("Error applying layout:", e);
+  }
+
+  return {
+    subject: subjectTemplate(variables),
+    html: finalHtml,
+    text: textTemplate(variables)
+  };
 };

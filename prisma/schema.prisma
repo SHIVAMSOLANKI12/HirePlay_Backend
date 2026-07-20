@@ -39,6 +39,7 @@ model User {
   performedTimelines OfferTimeline[]
   performedAuditLogs OfferAuditLog[]
   notifications      Notification[]
+  notificationPreference NotificationPreference?
 }
 
 model RefreshToken {
@@ -85,6 +86,7 @@ model Company {
   interviews         Interview[]
   offers             Offer[]
   notifications      Notification[]
+  notificationPreferences NotificationPreference[]
 }
 
 model HR {
@@ -720,4 +722,27 @@ model Notification {
   @@index([status])
   @@index([createdAt])
   @@index([isRead])
+}
+
+model NotificationPreference {
+  id               String    @id @default(uuid())
+  userId           String    @unique
+  companyId        String
+  emailEnabled     Boolean   @default(true)
+  inAppEnabled     Boolean   @default(true)
+  smsEnabled       Boolean   @default(false)
+  pushEnabled      Boolean   @default(false)
+  whatsappEnabled  Boolean   @default(false)
+  marketingEnabled Boolean   @default(false)
+  systemEnabled    Boolean   @default(true)
+
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
 }

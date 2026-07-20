@@ -19,7 +19,17 @@ export const processEmailNotification = async (notification) => {
     // 1. Mark as processing
     await markEmailAsProcessing(notification.id);
 
-    // 2. We need the recipient email. We can fetch it via the user relation if not in payload
+    // 2. Fetch User Preferences First
+    const { getNotificationPreferencesForUser } = await import("../../services/preference.service.js");
+    const prefs = await getNotificationPreferencesForUser(notification.userId, notification.companyId);
+    
+    if (!prefs.emailEnabled) {
+      console.log(`[EmailService] Skipping email for notification ${notification.id} because emailEnabled is false.`);
+      await markEmailAsFailed(notification.id, "User disabled email notifications", "SYSTEM");
+      return;
+    }
+
+    // 3. We need the recipient email. We can fetch it via the user relation if not in payload
     let recipientEmail = notification.payload?.recipientEmail;
     
     if (!recipientEmail) {
@@ -31,34 +41,53 @@ export const processEmailNotification = async (notification) => {
       throw new Error("Recipient email is missing");
     }
 
-    // 3. Render Template
-    // Determine the specific body content for this event type
-    // The subscriber passes `eventName` inside metadata if we need it, but let's assume payload.eventName is passed, 
-    // or we can fallback to the generic template
-    const eventName = notification.payload?.eventName || "DEFAULT";
-    const bodyTemplateRaw = EMAIL_TEMPLATES[eventName] || EMAIL_TEMPLATES["DEFAULT"];
+    // 4. Render Handlebars Template
+    const eventName = notification.payload?.eventName;
+    let subject, htmlBody, textBody;
     
-    // We inject the message/payload into the BodyContent of the base layout
-    const templateVars = {
-      ...notification.payload,
-      NotificationTitle: notification.title,
-      NotificationMessage: notification.message,
-      CompanyName: notification.payload?.companyName || "HirePlay",
-      Year: new Date().getFullYear(),
-    };
+    try {
+      if (!eventName) throw new Error("No eventName provided");
 
-    // First render the inner body
-    const renderedBody = renderTemplate(bodyTemplateRaw, templateVars);
-    
-    // Then inject the rendered body into the base layout
-    templateVars.BodyContent = renderedBody;
-    const htmlBody = renderTemplate(BASE_HTML_LAYOUT, templateVars);
+      // Fetch company for branding
+      const company = await prisma.company.findUnique({ where: { id: notification.companyId } });
+      
+      const templateVars = {
+        ...notification.payload,
+        "Candidate Name": notification.payload?.candidateName || "Candidate",
+        "Recruiter Name": notification.payload?.recruiterName || "Recruiter",
+        "Company Name": company?.name || notification.payload?.companyName || "HirePlay",
+        "Job Title": notification.payload?.jobTitle || "Job",
+        "Interview Date": notification.payload?.interviewDate || "",
+        "Interview Time": notification.payload?.interviewTime || "",
+        "Offer Salary": notification.payload?.offerSalary || "",
+        "Offer Joining Date": notification.payload?.offerJoiningDate || "",
+        "Password Reset Link": notification.payload?.passwordResetLink || "",
+        branding: {
+          companyName: company?.name || notification.payload?.companyName || "HirePlay",
+          logoUrl: company?.logo || null,
+          primaryColor: "#007bff", // Default color
+          supportEmail: company?.email || "support@hireplay.com"
+        }
+      };
+      
+      const rendered = renderTemplate(eventName, templateVars);
+      subject = rendered.subject;
+      htmlBody = rendered.html;
+      textBody = rendered.text;
+    } catch (e) {
+      // Fallback if template doesn't exist or eventName missing
+      console.warn(`[EmailService] Falling back to default rendering: ${e.message}`);
+      subject = notification.title;
+      htmlBody = `<p>${notification.message}</p>`;
+      textBody = notification.message;
+    }
 
-    // 4. Send Email via Provider
+    // 5. Send Email via Provider
     const result = await emailProvider.sendEmail({
       to: recipientEmail,
-      subject: notification.title,
-      html: htmlBody
+      subject: subject,
+      html: htmlBody,
+      text: textBody
     });
 
     // 5. Update Status

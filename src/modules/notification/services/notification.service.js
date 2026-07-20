@@ -29,6 +29,17 @@ export const processNotificationEvent = async (payload) => {
       return null;
     }
 
+    const { getNotificationPreferencesForUser } = await import("./preference.service.js");
+    const prefs = await getNotificationPreferencesForUser(userId, companyId);
+    
+    // Check channel preferences
+    if (channel === "IN_APP" && !prefs.inAppEnabled) {
+      console.log(`Skipping IN_APP notification for user ${userId} due to preferences.`);
+      return null;
+    }
+    
+    // Add additional channel checks here if needed
+
     const notification = await createNotification({
       companyId,
       userId,
