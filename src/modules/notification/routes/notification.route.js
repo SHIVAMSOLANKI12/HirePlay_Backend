@@ -8,6 +8,7 @@ import {
   markAllAsRead, 
   deleteNotification 
 } from "../controllers/notification.controller.js";
+import { getDeliveryStatus } from "../controllers/delivery.controller.js";
 import { requireAuth } from "../../../middleware/requireAuth.middleware.js";
 
 const router = Router();
@@ -33,5 +34,8 @@ router.route("/:notificationId")
 
 router.route("/:notificationId/read")
   .patch(markAsRead);
+
+router.route("/:id/delivery")
+  .get(getDeliveryStatus);
 
 export default router;

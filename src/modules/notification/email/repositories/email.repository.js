@@ -31,6 +31,7 @@ export const markEmailAsFailed = async (notificationId, failureReason, providerN
       status: "FAILED",
       failureReason: failureReason?.substring(0, 255), // avoid overly long strings
       provider: providerName,
+      failedAt: new Date(),
       retryCount: {
         increment: 1
       }
@@ -46,7 +47,8 @@ export const markEmailAsProcessing = async (notificationId) => {
   return await prisma.notification.update({
     where: { id: notificationId },
     data: {
-      status: "PROCESSING"
+      status: "PROCESSING",
+      processingAt: new Date()
     }
   });
 };

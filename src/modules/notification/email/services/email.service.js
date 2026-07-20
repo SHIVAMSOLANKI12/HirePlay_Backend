@@ -97,10 +97,12 @@ export const processEmailNotification = async (notification) => {
     } else {
       await markEmailAsFailed(notification.id, result.error, PROVIDER_NAME);
       console.error(`[EmailService] Email failed for notification ${notification.id}`);
+      throw new Error(`SMTP Error: ${result.error}`); // Throw so BullMQ can retry
     }
     
   } catch (error) {
     console.error(`[EmailService] Critical error processing email ${notification.id}: ${error.message}`);
     await markEmailAsFailed(notification.id, error.message, PROVIDER_NAME);
+    throw error; // Throw so BullMQ can retry
   }
 };

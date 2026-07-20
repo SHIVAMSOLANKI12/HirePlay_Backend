@@ -685,9 +685,12 @@ enum NotificationChannel {
 
 enum NotificationStatus {
   PENDING
+  QUEUED
   PROCESSING
   SENT
   FAILED
+  RETRYING
+  CANCELLED
   READ
 }
 
@@ -704,11 +707,16 @@ model Notification {
   isRead        Boolean             @default(false)
   
   // --- Email Engine Tracking Fields ---
-  provider      String?
-  messageId     String?
-  sentAt        DateTime?
-  failureReason String?
-  retryCount    Int                 @default(0)
+  provider          String?
+  messageId         String?
+  providerResponse  String?
+  failureReason     String?
+  retryCount        Int                 @default(0)
+  queuedAt          DateTime?
+  processingAt      DateTime?
+  sentAt            DateTime?
+  failedAt          DateTime?
+  lastRetryAt       DateTime?
   
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
