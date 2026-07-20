@@ -16,3 +16,10 @@ export const toNotificationListDTO = (notifications, total, page, limit) => {
     data: notifications.map(n => toNotificationDTO(n))
   };
 };
+
+export const toNotificationCountDTO = (countData) => {
+  return {
+    total: countData.total,
+    unread: countData.unread
+  };
+};

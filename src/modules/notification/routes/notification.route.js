@@ -1,5 +1,13 @@
 import { Router } from "express";
-import { getNotifications, getNotificationById, markAsRead } from "../controllers/notification.controller.js";
+import { 
+  getNotifications, 
+  getNotificationById, 
+  markAsRead, 
+  getUnreadNotifications, 
+  getNotificationCount, 
+  markAllAsRead, 
+  deleteNotification 
+} from "../controllers/notification.controller.js";
 import { requireAuth } from "../../../middleware/requireAuth.middleware.js";
 
 const router = Router();
@@ -10,8 +18,18 @@ router.use(requireAuth);
 router.route("/")
   .get(getNotifications);
 
+router.route("/unread")
+  .get(getUnreadNotifications);
+
+router.route("/count")
+  .get(getNotificationCount);
+
+router.route("/read-all")
+  .patch(markAllAsRead);
+
 router.route("/:notificationId")
-  .get(getNotificationById);
+  .get(getNotificationById)
+  .delete(deleteNotification);
 
 router.route("/:notificationId/read")
   .patch(markAsRead);

@@ -27,5 +27,11 @@ export const NOTIFICATION_EVENTS = {
   OFFER_REJECTED: "offer.rejected",
 
   // System Events
-  SYSTEM_ALERT: "system.alert"
+  SYSTEM_ALERT: "system.alert",
+
+  // Real-Time / Internal Notification State Events
+  NOTIFICATION_CREATED: "notification.created",
+  NOTIFICATION_READ: "notification.read",
+  ALL_NOTIFICATIONS_READ: "notification.read_all",
+  NOTIFICATION_DELETED: "notification.deleted"
 };
