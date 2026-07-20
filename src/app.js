@@ -18,6 +18,7 @@ import offerModule from "./modules/offer/offer.module.js";
 import authorizationModule from "./modules/authorization/authorization.module.js";
 import analyticsModule from "./modules/analytics/analytics.module.js";
 import notificationModule from "./modules/notification/notification.module.js";
+import activityModule from "./modules/activity/activity.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -59,7 +60,7 @@ offerModule(app);
 authorizationModule(app);
 analyticsModule(app);
 notificationModule(app);
-
+activityModule(app);
 // Error handler should always be last
 app.use(errorHandler);
 

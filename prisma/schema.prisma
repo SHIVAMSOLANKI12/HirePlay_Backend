@@ -164,7 +164,6 @@ model Job {
 
   company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   applications Application[]
-  activityLogs ActivityLog[]
   interviews   Interview[]
   offers       Offer[]
 
@@ -233,7 +232,6 @@ model Application {
   resume       Resume?               @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   activities   ApplicationActivity[]
   notes        ApplicationNote[]
-  activityLogs ActivityLog[]
   interviews   Interview[]
   offer        Offer?
 
@@ -344,51 +342,6 @@ model ApplicationNote {
   @@index([createdAt])
 }
 
-model ActivityLog {
-  id            String       @id @default(uuid())
-  companyId     String?
-  userId        String
-  applicationId String?
-  jobId         String?
-  type          ActivityType
-  title         String
-  description   String
-  metadata      Json?
-  createdAt     DateTime     @default(now())
-
-  // relations
-  company     Company?     @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  job         Job?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-  @@index([userId])
-  @@index([createdAt])
-}
-
-enum ActivityType {
-  APPLICATION_SUBMITTED
-  APPLICATION_WITHDRAWN
-  APPLICATION_SHORTLISTED
-  APPLICATION_REJECTED
-  APPLICATION_REVIEWED
-  INTERVIEW_SCHEDULED
-  INTERVIEW_RESCHEDULED
-  OFFER_SENT
-  OFFER_ACCEPTED
-  OFFER_REJECTED
-  OFFER_DRAFTED
-  OFFER_APPROVED
-  OFFER_REVOKED
-  OFFER_EXPIRED
-  JOB_CREATED
-  JOB_UPDATED
-  JOB_CLOSED
-  INTERVIEW_FEEDBACK_SUBMITTED
-  INTERVIEW_CANCELLED
-  INTERVIEW_DECISION_UPDATED
-}
 
 enum InterviewType {
   ONLINE
@@ -753,4 +706,66 @@ model NotificationPreference {
 
   @@index([companyId])
   @@index([userId])
+}
+
+enum ActivityEntity {
+  AUTH
+  COMPANY
+  HR
+  JOB
+  APPLICATION
+  INTERVIEW
+  OFFER
+  NOTIFICATION
+  SYSTEM
+}
+
+enum ActivityAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PASSWORD_RESET
+  APPLY
+  WITHDRAW
+  STATUS_CHANGE
+  SCHEDULE
+  RESCHEDULE
+  CANCEL
+  FEEDBACK
+  APPROVE
+  SEND
+  ACCEPT
+  REJECT
+  PUBLISH
+  CLOSE
+}
+
+model ActivityLog {
+  id              String         @id @default(uuid())
+  companyId       String?
+  userId          String?
+  entityType      ActivityEntity
+  entityId        String?
+  action          ActivityAction
+  oldValue        Json?
+  newValue        Json?
+  metadata        Json?
+  ipAddress       String?
+  userAgent       String?
+  performedByRole Role?
+
+  createdAt       DateTime       @default(now())
+  deletedAt       DateTime?
+
+  company         Company?       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user            User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([action])
+  @@index([createdAt])
 }
