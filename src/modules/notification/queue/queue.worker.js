@@ -41,7 +41,10 @@ export const emailWorker = new Worker('email-notifications', async (job) => {
   // If this throws, BullMQ catches it and applies the retry policy.
   await processEmailNotification(emailNotification);
   
-}, { connection: redisConnection });
+}, { 
+  connection: redisConnection,
+  concurrency: parseInt(process.env.QUEUE_CONCURRENCY || '5', 10)
+});
 
 emailWorker.on('completed', (job) => {
   console.log(`[QueueWorker] Job ${job.id} has completed successfully`);
@@ -55,3 +58,14 @@ emailWorker.on('failed', async (job, err) => {
   // but if it completely threw before catching, we could handle it here.
   // In `processEmailNotification`, we already wrap in try/catch and call `markEmailAsFailed`.
 });
+
+// Graceful Shutdown
+const gracefulShutdown = async (signal) => {
+  console.log(`\n[QueueWorker] Received ${signal}, closing worker gracefully...`);
+  await emailWorker.close();
+  console.log('[QueueWorker] Worker closed.');
+  process.exit(0);
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

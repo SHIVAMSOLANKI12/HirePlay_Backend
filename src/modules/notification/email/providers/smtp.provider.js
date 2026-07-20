@@ -14,6 +14,9 @@ export default class SMTPProvider extends EmailProvider {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      pool: true,
+      maxConnections: parseInt(process.env.SMTP_MAX_CONNECTIONS || '5', 10),
+      maxMessages: parseInt(process.env.SMTP_MAX_MESSAGES || '100', 10)
     });
   }
 
