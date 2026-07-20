@@ -40,5 +40,21 @@ export const rejectOfferWorkflow = async (user, offerId, data) => {
     user
   );
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.OFFER_REJECTED, {
+    companyId: offer.companyId,
+    userId: offer.createdById, // Notify the person who created the offer
+    type: "OFFER",
+    channel: "EMAIL",
+    title: "Offer Declined",
+    message: `Candidate ${user.firstName} has declined the job offer.`,
+    metadata: { offerId: updatedOffer.id },
+    eventName: NOTIFICATION_EVENTS.OFFER_REJECTED,
+    CandidateName: user.firstName,
+    JobTitle: offer.jobTitle,
+  });
+
   return toOfferStatusDTO(updatedOffer);
 };

@@ -28,5 +28,34 @@ export const changeJobStatusService = async (user, jobId, newStatus) => {
 
   const updatedJob = await updateJob(jobId, dataToUpdate);
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  if (newStatus === "PUBLISHED") {
+    publishNotificationEvent(NOTIFICATION_EVENTS.JOB_PUBLISHED, {
+      companyId: existingJob.companyId,
+      userId: user.id,
+      type: "SYSTEM",
+      channel: "EMAIL",
+      title: "Job Published",
+      message: `Job ${updatedJob.title} has been successfully published.`,
+      metadata: { jobId: updatedJob.id },
+      eventName: NOTIFICATION_EVENTS.JOB_PUBLISHED,
+      JobTitle: updatedJob.title
+    });
+  } else if (newStatus === "CLOSED") {
+    publishNotificationEvent(NOTIFICATION_EVENTS.JOB_CLOSED, {
+      companyId: existingJob.companyId,
+      userId: user.id,
+      type: "SYSTEM",
+      channel: "EMAIL",
+      title: "Job Closed",
+      message: `Job ${updatedJob.title} has been closed.`,
+      metadata: { jobId: updatedJob.id },
+      eventName: NOTIFICATION_EVENTS.JOB_CLOSED,
+      JobTitle: updatedJob.title
+    });
+  }
+
   return JobDTO.toResponse(updatedJob);
 };

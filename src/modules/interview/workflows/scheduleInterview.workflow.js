@@ -11,15 +11,9 @@ import { createActivityLog } from "../../activity/services/activityLog.service.j
  * Orchestrates the creation of a new Interview.
  */
 export const scheduleInterviewWorkflow = async (user, data) => {
-  // 1. Verify Job and Ownership
-  const job = await verifyRecruiterJobAccess(user, data.jobId);
-    
-  // 2. Validate Application exists for this job
-  const application = await prisma.application.findFirst({
-    where: {
-      id: data.applicationId,
-      jobId: data.jobId
-    },
+  // 1. Fetch Application first to get jobId
+  const application = await prisma.application.findUnique({
+    where: { id: data.applicationId },
     select: {
       id: true,
       jobId: true,
@@ -30,8 +24,11 @@ export const scheduleInterviewWorkflow = async (user, data) => {
   });
 
   if (!application) {
-    throw new AppError("Application not found for this job", 404);
+    throw new AppError("Application not found", 404);
   }
+
+  // 2. Verify Job and Ownership using application.jobId
+  const job = await verifyRecruiterJobAccess(user, application.jobId);
 
   // 3. Application status check (Optional based on business rules, but usually should be SHORTLISTED or INTERVIEW)
   const allowedStatuses = [APPLICATION_STATUS.SCREENING, APPLICATION_STATUS.SHORTLISTED, APPLICATION_STATUS.INTERVIEW, APPLICATION_STATUS.APPLIED];
@@ -39,7 +36,7 @@ export const scheduleInterviewWorkflow = async (user, data) => {
     throw new AppError(`Cannot schedule interview for application in ${application.status} status`, 400);
   }
 
-  return await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // 4. Check for duplicate schedules for the exact time
     const conflict = await findConflictingInterview(application.id, new Date(data.scheduledAt), tx);
     if (conflict) {
@@ -52,7 +49,7 @@ export const scheduleInterviewWorkflow = async (user, data) => {
       companyId: application.job.companyId,
       candidateId: application.candidateId,
       jobId: application.jobId,
-      scheduledById: user.id,
+      scheduledById: user.id, // Using global auth tracking ID
       title: data.title,
       description: data.description,
       type: data.type,
@@ -67,7 +64,7 @@ export const scheduleInterviewWorkflow = async (user, data) => {
     // 6. Log Domain Events for the timeline and dashboard
     await logApplicationActivity({
       applicationId: application.id,
-      performedBy: user.id,
+      performedBy: user.id, // Using global auth tracking ID
       action: "INTERVIEW_SCHEDULED",
       metadata: { interviewId: interview.id, title: interview.title, type: interview.type, scheduledAt: interview.scheduledAt },
     }, tx);
@@ -97,4 +94,27 @@ export const scheduleInterviewWorkflow = async (user, data) => {
 
     return populatedInterview;
   });
+
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.INTERVIEW_SCHEDULED, {
+    companyId: result.companyId,
+    userId: result.candidateId, // Candidate is the recipient
+    type: "INTERVIEW",
+    channel: "EMAIL",
+    title: "Interview Scheduled",
+    message: `Your interview for ${result.job.title} has been scheduled.`,
+    metadata: { interviewId: result.id },
+    eventName: NOTIFICATION_EVENTS.INTERVIEW_SCHEDULED,
+    CandidateName: result.candidate?.firstName || "Candidate",
+    JobTitle: result.job?.title,
+    CompanyName: result.company?.name,
+    InterviewDate: new Date(result.scheduledAt).toLocaleDateString(),
+    InterviewTime: new Date(result.scheduledAt).toLocaleTimeString(),
+    RecruiterName: result.scheduledBy?.firstName || "Recruiter",
+    recipientEmail: result.candidate?.email
+  });
+
+  return result;
 };

@@ -78,6 +78,27 @@ export const applyToJob = async (candidateId, jobId, applicationData) => {
     return app;
   });
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  // Fetch candidate details since candidateId is provided but not populated here
+  const candidateUser = await prisma.user.findUnique({ where: { id: candidateId }, select: { name: true, email: true }});
+  
+  publishNotificationEvent(NOTIFICATION_EVENTS.APPLICATION_SUBMITTED, {
+    companyId: job.companyId,
+    userId: candidateId,
+    type: "SYSTEM",
+    channel: "EMAIL",
+    title: "Application Received",
+    message: `Thank you for applying for ${job.title}.`,
+    metadata: { applicationId: newApplication.id, jobId: job.id },
+    eventName: NOTIFICATION_EVENTS.APPLICATION_SUBMITTED,
+    CandidateName: candidateUser?.name || "Candidate",
+    JobTitle: job.title,
+    CompanyName: job.company?.name || "Our Company",
+    recipientEmail: candidateUser?.email
+  });
+
   return {
     applicationId: newApplication.id,
     status: newApplication.status,

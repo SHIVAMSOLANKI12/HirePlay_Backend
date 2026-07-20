@@ -20,6 +20,7 @@ export const findHRByEmailForAuth = async (email) => {
       company: {
         select: {
           deletedAt: true,
+          ownerId: true,
         },
       },
     },

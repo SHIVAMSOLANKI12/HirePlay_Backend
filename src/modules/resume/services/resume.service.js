@@ -1,4 +1,5 @@
 import path from "path";
+import AppError from "../../../utils/AppError.js";
 import { LocalStorageProvider } from "../../../shared/providers/storage/local-storage.provider.js";
 import {
   createResume,
@@ -13,7 +14,7 @@ const RESUME_UPLOAD_DIR = path.join(process.cwd(), "uploads", "resumes");
 
 export const uploadResumeService = async (candidateId, file) => {
   if (!file) {
-    throw new Error("No file uploaded"); // Better to use a custom error like BadRequestError if it existed
+    throw new AppError("No file uploaded. Please ensure you are sending 'multipart/form-data' with the key 'file'.", 400);
   }
 
   // Use storage provider to handle the file
@@ -40,18 +41,14 @@ export const uploadResumeService = async (candidateId, file) => {
 export const getActiveResumeService = async (candidateId) => {
   const resume = await getActiveResumeByCandidateId(candidateId);
   if (!resume) {
-    const error = new Error("Active resume not found");
-    error.statusCode = 404;
-    throw error;
+    throw new AppError("Active resume not found", 404);
   }
   return resume;
 };
 
 export const replaceResumeService = async (candidateId, file) => {
   if (!file) {
-    const error = new Error("No file uploaded");
-    error.statusCode = 400;
-    throw error;
+    throw new AppError("No file uploaded. Please ensure you are sending 'multipart/form-data' with the key 'file'.", 400);
   }
 
   // Basically the same as upload, as it will deactivate existing and create a new active one
@@ -61,9 +58,7 @@ export const replaceResumeService = async (candidateId, file) => {
 export const deleteResumeService = async (candidateId) => {
   const activeResume = await getActiveResumeByCandidateId(candidateId);
   if (!activeResume) {
-    const error = new Error("Active resume not found");
-    error.statusCode = 404;
-    throw error;
+    throw new AppError("Active resume not found", 404);
   }
 
   await softDeleteResume(activeResume.id);

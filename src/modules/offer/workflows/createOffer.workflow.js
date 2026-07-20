@@ -71,5 +71,23 @@ export const createOfferWorkflow = async (user, data) => {
     return newOffer;
   });
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.OFFER_CREATED, {
+    companyId: offer.companyId,
+    userId: user.id, // Internal notification to the creator or admins
+    type: "OFFER",
+    channel: "EMAIL",
+    title: "Offer Draft Created",
+    message: `An offer has been drafted for ${application.candidate?.firstName || 'Candidate'}.`,
+    metadata: { offerId: offer.id },
+    eventName: NOTIFICATION_EVENTS.OFFER_CREATED,
+    CandidateName: application.candidate?.firstName || "Candidate",
+    JobTitle: offer.jobTitle,
+    OfferSalary: `${offer.currency} ${offer.salary}`,
+    OfferJoiningDate: new Date(offer.joiningDate).toLocaleDateString(),
+  });
+
   return toOfferDTO(offer);
 };

@@ -3,14 +3,13 @@ import { createNotification, findNotifications, findNotificationById, markAsRead
 import { publishNotificationEvent } from "../publishers/notification.publisher.js";
 
 export const getCompanyIdForUser = async (user) => {
+  if (user.companyId) return user.companyId;
+
   if (user.role === "COMPANY_ADMIN") {
     const company = await prisma.company.findFirst({ where: { ownerId: user.id } });
     return company?.id;
   }
-  if (user.role === "HR") {
-    const hr = await prisma.hR.findUnique({ where: { id: user.id } });
-    return hr?.companyId;
-  }
+  
   return null;
 };
 

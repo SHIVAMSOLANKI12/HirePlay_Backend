@@ -27,6 +27,24 @@ export const createHRService = async (ownerId, payload) => {
   // Save to DB
   const newHR = await createHR(hrData);
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.HR_CREATED, {
+    companyId: existingCompany.id,
+    userId: ownerId, // Track under the Company Admin's ID in Notification table
+    type: "SYSTEM",
+    channel: "EMAIL",
+    title: "HR Account Created",
+    message: `Your HR account for ${existingCompany.name} has been created.`,
+    metadata: { hrId: newHR.id },
+    eventName: NOTIFICATION_EVENTS.HR_CREATED,
+    UserName: newHR.firstName,
+    CompanyName: existingCompany.name,
+    LoginLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
+    recipientEmail: newHR.email // Email service will use this to send to HR directly
+  });
+
   // Return DTO
   return HRDTO.toResponse(newHR);
 };

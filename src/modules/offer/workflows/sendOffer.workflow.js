@@ -41,5 +41,25 @@ export const sendOfferWorkflow = async (user, offerId) => {
     user
   );
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.OFFER_SENT, {
+    companyId: existingOffer.companyId,
+    userId: existingOffer.candidateId, // Send email to candidate
+    type: "OFFER",
+    channel: "EMAIL",
+    title: "Job Offer",
+    message: `You have received a job offer for ${existingOffer.jobTitle}.`,
+    metadata: { offerId: updatedOffer.id },
+    eventName: NOTIFICATION_EVENTS.OFFER_SENT,
+    CandidateName: existingOffer.application?.candidate?.firstName || "Candidate",
+    CompanyName: existingOffer.company?.name || "HirePlay",
+    JobTitle: existingOffer.jobTitle,
+    OfferSalary: `${existingOffer.currency} ${existingOffer.salary}`,
+    OfferJoiningDate: new Date(existingOffer.joiningDate).toLocaleDateString(),
+    OfferLink: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/offers/${updatedOffer.id}`
+  });
+
   return toOfferStatusDTO(updatedOffer);
 };

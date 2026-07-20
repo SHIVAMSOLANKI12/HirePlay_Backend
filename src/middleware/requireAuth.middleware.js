@@ -19,9 +19,11 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
     const decoded = verifyAccessToken(token);
 
     req.user = {
-      id: decoded.id,
+      id: decoded.ownerId || decoded.id, // Magical fix to ensure FK constraints always get the Company Owner ID
+      originalId: decoded.id, // For HR specific routes to fetch their own profiles
       email: decoded.email,
       role: decoded.role,
+      companyId: decoded.companyId, // Added for HR tokens
     };
 
     next();

@@ -4,12 +4,19 @@ import prisma from "../../../config/prisma.js";
  * Updates the decision of an interview process.
  */
 export const updateInterviewDecision = async (id, decision, decisionNotes, tx = prisma) => {
+  const data = {
+    decision,
+    decisionNotes,
+  };
+
+  if (decision === "SELECTED" || decision === "REJECTED") {
+    data.status = "COMPLETED";
+    data.completedAt = new Date();
+  }
+
   return tx.interview.update({
     where: { id },
-    data: {
-      decision,
-      decisionNotes,
-    },
+    data,
     select: {
       id: true,
       decision: true,

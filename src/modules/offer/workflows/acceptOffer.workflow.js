@@ -40,5 +40,22 @@ export const acceptOfferWorkflow = async (user, offerId, data) => {
     user
   );
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.OFFER_ACCEPTED, {
+    companyId: offer.companyId,
+    userId: offer.createdById, // Notify the person who created the offer
+    type: "OFFER",
+    channel: "EMAIL",
+    title: "Offer Accepted",
+    message: `Candidate ${user.firstName} has accepted the job offer.`,
+    metadata: { offerId: updatedOffer.id },
+    eventName: NOTIFICATION_EVENTS.OFFER_ACCEPTED,
+    CandidateName: user.firstName,
+    JobTitle: offer.jobTitle,
+    OfferJoiningDate: new Date(offer.joiningDate).toLocaleDateString(),
+  });
+
   return toOfferStatusDTO(updatedOffer);
 };

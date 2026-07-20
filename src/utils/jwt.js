@@ -21,6 +21,7 @@ export const generateHRAccessToken = (hr) => {
       id: hr.id,
       userId: hr.id,
       companyId: hr.companyId,
+      ownerId: hr.company?.ownerId,
       email: hr.email,
       role: hr.role,
     },

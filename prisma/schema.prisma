@@ -699,10 +699,18 @@ model Notification {
   message   String
   status    NotificationStatus  @default(PENDING)
   payload   Json?
-  isRead    Boolean             @default(false)
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  deletedAt DateTime?
+  isRead        Boolean             @default(false)
+  
+  // --- Email Engine Tracking Fields ---
+  provider      String?
+  messageId     String?
+  sentAt        DateTime?
+  failureReason String?
+  retryCount    Int                 @default(0)
+  
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  deletedAt     DateTime?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)

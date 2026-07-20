@@ -31,7 +31,24 @@ export const onInterviewRescheduled = async (interview, history, user, tx) => {
     metadata: { interviewId: interview.id, historyId: history.id },
   }, tx);
   
-  // Future: Trigger Notification Module / Email here
+  // Trigger Notification Module
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+  
+  publishNotificationEvent(NOTIFICATION_EVENTS.INTERVIEW_RESCHEDULED, {
+    companyId: interview.companyId,
+    userId: interview.candidateId,
+    type: "INTERVIEW",
+    channel: "EMAIL",
+    title: "Interview Rescheduled",
+    message: `Your interview "${interview.title}" has been rescheduled.`,
+    metadata: { interviewId: interview.id },
+    eventName: NOTIFICATION_EVENTS.INTERVIEW_RESCHEDULED,
+    CandidateName: "Candidate", // We might not have the full candidate object here, it can be fetched by email service if needed, or we just pass defaults
+    InterviewDate: new Date(history.newScheduledAt).toLocaleDateString(),
+    InterviewTime: new Date(history.newScheduledAt).toLocaleTimeString(),
+    RecruiterName: user.firstName || "Recruiter",
+  });
 };
 
 /**
@@ -62,5 +79,20 @@ export const onInterviewCancelled = async (interview, history, user, tx) => {
     metadata: { interviewId: interview.id, historyId: history.id },
   }, tx);
 
-  // Future: Trigger Notification Module / Email here
+  // Trigger Notification Module
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+  
+  publishNotificationEvent(NOTIFICATION_EVENTS.INTERVIEW_CANCELLED, {
+    companyId: interview.companyId,
+    userId: interview.candidateId,
+    type: "INTERVIEW",
+    channel: "EMAIL",
+    title: "Interview Cancelled",
+    message: `Your interview "${interview.title}" has been cancelled.`,
+    metadata: { interviewId: interview.id },
+    eventName: NOTIFICATION_EVENTS.INTERVIEW_CANCELLED,
+    CandidateName: "Candidate",
+    RecruiterName: user.firstName || "Recruiter",
+  });
 };

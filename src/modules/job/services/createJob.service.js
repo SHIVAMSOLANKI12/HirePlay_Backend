@@ -26,14 +26,30 @@ export const createJobService = async (user, payload) => {
   // Track reusable ActivityLog for dashboards
   const { createActivityLog } = await import("../../activity/services/activityLog.service.js");
   await createActivityLog({
-    userId: user.id,
+    userId: user.id, // Using global auth tracking ID
     companyId: companyId,
     applicationId: null,
     jobId: newJob.id,
     type: "JOB_CREATED",
     title: "Job Created",
     description: `Created new job: ${newJob.title}.`,
-    metadata: null,
+    metadata: { createdByHR: user.role === "HR", hrEmail: user.email },
+  });
+
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.JOB_PUBLISHED, {
+    companyId: companyId,
+    userId: user.id, // Using global auth tracking ID
+    type: "SYSTEM",
+    channel: "EMAIL",
+    title: "Job Published",
+    message: `Job ${newJob.title} has been successfully published.`,
+    metadata: { jobId: newJob.id },
+    eventName: NOTIFICATION_EVENTS.JOB_PUBLISHED,
+    JobTitle: newJob.title,
+    recipientEmail: user.email // Ensure the email goes to the HR who created the job
   });
 
   return JobDTO.toResponse(newJob);

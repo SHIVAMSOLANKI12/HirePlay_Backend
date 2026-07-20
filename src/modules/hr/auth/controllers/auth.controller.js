@@ -25,14 +25,14 @@ export const hrRefreshTokenController = asyncHandler(async (req, res) => {
 
 export const hrLogoutController = asyncHandler(async (req, res) => {
   const { refreshToken } = refreshTokenSchema.parse(req.body);
-  const result = await executeHRLogout(req.user.id, refreshToken);
+  const result = await executeHRLogout(req.user.originalId, refreshToken);
   
   return successResponse(res, result, result.message, 200);
 });
 
 export const hrChangePasswordController = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
-  const result = await executeHRChangePassword(req.user.id, currentPassword, newPassword);
+  const result = await executeHRChangePassword(req.user.originalId, currentPassword, newPassword);
   
   return successResponse(res, result, result.message, 200);
 });
@@ -52,7 +52,7 @@ export const hrResetPasswordController = asyncHandler(async (req, res) => {
 });
 
 export const hrMeController = asyncHandler(async (req, res) => {
-  const result = await executeGetHRMe(req.user.id);
+  const result = await executeGetHRMe(req.user.originalId);
 
   return successResponse(res, result, "HR profile fetched successfully", 200);
 });

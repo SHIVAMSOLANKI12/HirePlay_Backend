@@ -42,5 +42,21 @@ export const approveOfferWorkflow = async (user, offerId) => {
     user
   );
 
+  const { publishNotificationEvent } = await import("../../notification/publishers/notification.publisher.js");
+  const { NOTIFICATION_EVENTS } = await import("../../notification/constants/notification.events.js");
+
+  publishNotificationEvent(NOTIFICATION_EVENTS.OFFER_APPROVED, {
+    companyId: existingOffer.job.companyId || existingOffer.companyId,
+    userId: existingOffer.createdById, // Notify the person who drafted it
+    type: "OFFER",
+    channel: "EMAIL",
+    title: "Offer Approved",
+    message: `Offer for ${existingOffer.application?.candidate?.firstName || 'Candidate'} has been approved.`,
+    metadata: { offerId: updatedOffer.id },
+    eventName: NOTIFICATION_EVENTS.OFFER_APPROVED,
+    CandidateName: existingOffer.application?.candidate?.firstName || "Candidate",
+    JobTitle: existingOffer.jobTitle,
+  });
+
   return toOfferStatusDTO(updatedOffer);
 };
