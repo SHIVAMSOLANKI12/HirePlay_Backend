@@ -24,10 +24,9 @@ export const executeHRResetPassword = async (plainToken, newPassword) => {
   await clearResetToken(hr.id);
 
   eventEngine.emit(ACTIVITY_EVENTS.AUTH_PASSWORD_RESET, {
-    userId: hr.id,
     companyId: hr.companyId,
     performedByRole: hr.role,
-    metadata: { source: "HR_PASSWORD_RESET" }
+    metadata: { source: "HR_PASSWORD_RESET", hrId: hr.id }
   });
 
   return { message: "Password has been reset successfully. You can now login." };

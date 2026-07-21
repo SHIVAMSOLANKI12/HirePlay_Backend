@@ -40,5 +40,8 @@ export const ACTIVITY_EVENTS = {
 
   // Resumes
   RESUME_PREVIEWED: "resume.previewed",
-  RESUME_DOWNLOADED: "resume.downloaded"
+  RESUME_DOWNLOADED: "resume.downloaded",
+  RESUME_PARSED: "resume.parsed",
+  RESUME_REPARSED: "resume.reparsed",
+  RESUME_PARSE_FAILED: "resume.parse_failed"
 };

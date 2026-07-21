@@ -30,10 +30,9 @@ export const executeHRLogin = async (email, password) => {
   await updateRefreshToken(hr.id, hashedRefreshToken, expiresAt);
 
   eventEngine.emit(ACTIVITY_EVENTS.AUTH_LOGIN, {
-    userId: hr.id,
     companyId: hr.companyId,
     performedByRole: hr.role,
-    metadata: { source: "HR_LOGIN" }
+    metadata: { source: "HR_LOGIN", hrId: hr.id }
   });
 
   return toLoginResponseDTO(hr, accessToken, refreshToken);

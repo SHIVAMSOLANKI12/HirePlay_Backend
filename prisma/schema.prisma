@@ -256,6 +256,13 @@ enum ApplicationStatus {
   WITHDRAWN
 }
 
+enum ParsingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Resume {
   id           String  @id @default(uuid())
   candidateId  String
@@ -270,6 +277,12 @@ model Resume {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+
+  parsedData    Json?
+  parsingStatus ParsingStatus @default(PENDING)
+  parsedAt      DateTime?
+  parserVersion String?
+  parsingError  String?
 
   candidate    User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applications Application[]
@@ -743,6 +756,9 @@ enum ActivityAction {
   CLOSE
   PREVIEW
   DOWNLOAD
+  PARSE
+  REPARSE
+  PARSE_FAILED
 }
 
 model ActivityLog {

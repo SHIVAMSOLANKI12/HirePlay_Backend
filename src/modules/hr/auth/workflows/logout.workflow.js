@@ -19,9 +19,8 @@ export const executeHRLogout = async (hrId, refreshToken) => {
   await clearRefreshToken(hrId);
 
   eventEngine.emit(ACTIVITY_EVENTS.AUTH_LOGOUT, {
-    userId: hrId,
-    performedByRole: "HR", // or whatever the role is
-    metadata: { source: "HR_LOGOUT" }
+    performedByRole: "HR",
+    metadata: { source: "HR_LOGOUT", hrId: hrId }
   });
 
   return { message: "Logged out successfully." };

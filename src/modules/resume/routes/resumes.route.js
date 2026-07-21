@@ -4,7 +4,9 @@ import {
   getMyResume,
   getResumeMetadata,
   previewResume,
-  downloadResume
+  downloadResume,
+  parseResume,
+  getParsedResume
 } from "../controllers/resumes.controller.js";
 
 const router = Router();
@@ -20,6 +22,12 @@ router.get("/:resumeId/metadata", getResumeMetadata);
 
 // GET /api/v1/resumes/:resumeId/download
 router.get("/:resumeId/download", downloadResume);
+
+// POST /api/v1/resumes/:resumeId/parse
+router.post("/:resumeId/parse", parseResume);
+
+// GET /api/v1/resumes/:resumeId/parsed
+router.get("/:resumeId/parsed", getParsedResume);
 
 // GET /api/v1/resumes/:resumeId
 router.get("/:resumeId", previewResume);
