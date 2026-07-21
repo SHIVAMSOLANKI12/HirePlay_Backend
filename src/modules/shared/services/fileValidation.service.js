@@ -8,10 +8,10 @@ export const validateResumeFile = (file) => {
   }
 
   const ext = path.extname(file.originalname).toLowerCase();
-  
+  const allowedExts = [".pdf", ".docx"];
   // Validate Mime Type
-  if (!ALLOWED_RESUME_MIME_TYPES.includes(file.mimetype) || ext !== ".pdf") {
-    throw new AppError("Only PDF files are allowed", 400);
+  if (!ALLOWED_RESUME_MIME_TYPES.includes(file.mimetype) || !allowedExts.includes(ext)) {
+    throw new AppError("Only PDF and DOCX files are allowed", 400);
   }
 
   // Validate File Size

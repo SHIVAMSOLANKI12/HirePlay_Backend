@@ -122,7 +122,8 @@ export const getResumeSearchSuggestions = asyncHandler(async (req, res) => {
  */
 export const scoreResume = asyncHandler(async (req, res) => {
   const { resumeId } = req.params;
-  const result = await scoreResumeWorkflow(req.user, resumeId);
+  const { forceReScore } = req.body || {};
+  const result = await scoreResumeWorkflow(req.user, resumeId, forceReScore);
 
   return successResponse(
     res,

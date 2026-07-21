@@ -301,8 +301,10 @@ model Resume {
   candidate    User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applications Application[]
 
-  @@index([candidateId])
-  @@index([isActive])
+  @@index([candidateId, isActive, deletedAt]) // Optimized lookup for active candidate resumes
+  @@index([createdAt]) // Optimized for date filtering
+  @@index([parsingStatus]) // Optimized for parsing queues/status filtering
+  @@index([parsedData], type: Gin) // Optimized for JSONB full-text and array searches
 }
 
 enum ApplicationActivityAction {

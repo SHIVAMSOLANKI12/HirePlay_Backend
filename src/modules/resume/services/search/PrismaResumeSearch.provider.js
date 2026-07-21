@@ -89,7 +89,21 @@ export class PrismaResumeSearchProvider extends ResumeSearchProvider {
         orderBy,
         skip: Number(skip),
         take: Number(limit),
-        include: {
+        select: {
+          id: true,
+          candidateId: true,
+          fileName: true,
+          originalName: true,
+          mimeType: true,
+          fileSize: true,
+          fileUrl: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          parsingStatus: true,
+          aiScore: true,
+          aiScoreStatus: true,
+          scoringProvider: true,
           candidate: {
             select: {
               id: true,

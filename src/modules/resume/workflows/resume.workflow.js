@@ -153,12 +153,17 @@ export const getResumeSearchSuggestionsWorkflow = async (user, field) => {
   return suggestions;
 };
 
-export const scoreResumeWorkflow = async (user, resumeId) => {
-  const resume = await findResumeById(resumeId);
+export const scoreResumeWorkflow = async (user, resumeId, forceReScore = false) => {
+  const resume = await findResumeById(resumeId, true); // true to include parsedData
   await validateResumeAccess(user, resume);
 
   if (resume.parsingStatus !== "COMPLETED" || !resume.parsedData) {
     throw new AppError("Resume must be successfully parsed before scoring", 400);
+  }
+
+  // Caching mechanism: Avoid recalculating if already completed and not forced
+  if (resume.aiScoreStatus === "COMPLETED" && !forceReScore) {
+    return resume;
   }
 
   // Update status to processing

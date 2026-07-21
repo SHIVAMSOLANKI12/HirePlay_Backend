@@ -3,6 +3,7 @@ import AppError from "../../../utils/AppError.js";
 import { LocalStorageProvider } from "../../../shared/providers/storage/local-storage.provider.js";
 import {
   createResume,
+  createResumeWithDeactivation,
   getActiveResumeByCandidateId,
   deactivateResumesByCandidateId,
   softDeleteResume,
@@ -20,11 +21,8 @@ export const uploadResumeService = async (candidateId, file) => {
   // Use storage provider to handle the file
   const fileData = await storageProvider.uploadFile(file, RESUME_UPLOAD_DIR);
 
-  // Deactivate any existing active resumes
-  await deactivateResumesByCandidateId(candidateId);
-
-  // Save metadata to database
-  const resume = await createResume({
+  // Use transactional update and create
+  const resume = await createResumeWithDeactivation(candidateId, {
     candidateId,
     fileName: fileData.fileName,
     originalName: fileData.originalName,

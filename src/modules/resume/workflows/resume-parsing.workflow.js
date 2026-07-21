@@ -118,7 +118,7 @@ export const parseResumeWorkflow = async (user, resumeId, forceReparse = false) 
 };
 
 export const getParsedResumeWorkflow = async (user, resumeId) => {
-  const resume = await findResumeById(resumeId);
+  const resume = await findResumeById(resumeId, true);
   if (!resume) throw new AppError("Resume not found", 404);
 
   await validateResumeAccess(user, resume);
