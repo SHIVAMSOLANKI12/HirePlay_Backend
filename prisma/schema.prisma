@@ -263,6 +263,13 @@ enum ParsingStatus {
   FAILED
 }
 
+enum AiScoreStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model Resume {
   id           String  @id @default(uuid())
   candidateId  String
@@ -283,6 +290,13 @@ model Resume {
   parsedAt      DateTime?
   parserVersion String?
   parsingError  String?
+
+  aiScore          Int?
+  aiScoreVersion   String?
+  aiScoreStatus    AiScoreStatus @default(PENDING)
+  aiScoredAt       DateTime?
+  aiScoreBreakdown Json?
+  scoringProvider  String?
 
   candidate    User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   applications Application[]
@@ -759,6 +773,9 @@ enum ActivityAction {
   PARSE
   REPARSE
   PARSE_FAILED
+  SEARCH
+  SCORE
+  RE_SCORE
 }
 
 model ActivityLog {

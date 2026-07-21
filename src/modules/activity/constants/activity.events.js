@@ -43,5 +43,8 @@ export const ACTIVITY_EVENTS = {
   RESUME_DOWNLOADED: "resume.downloaded",
   RESUME_PARSED: "resume.parsed",
   RESUME_REPARSED: "resume.reparsed",
-  RESUME_PARSE_FAILED: "resume.parse_failed"
+  RESUME_PARSE_FAILED: "resume.parse_failed",
+  RESUME_SCORED: "resume.scored",
+  RESUME_RESCORED: "resume.rescored",
+  RESUME_SEARCHED: "resume.searched"
 };

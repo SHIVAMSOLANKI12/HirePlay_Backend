@@ -2,6 +2,7 @@ import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
 import { findResumeById } from "../repositories/resume.repository.js";
 import { PrismaResumeSearchProvider } from "../services/search/PrismaResumeSearch.provider.js";
+import { RuleBasedResumeScoringProvider } from "../services/scoring/RuleBasedResumeScoringProvider.js";
 import { LocalStorageProvider } from "../../../shared/providers/storage/local-storage.provider.js";
 import path from "path";
 import { logActivity } from "../../activity/services/activityLog.service.js";
@@ -9,6 +10,7 @@ import { ACTIVITY_ENTITIES, ACTIVITY_ACTIONS } from "../../activity/constants/ac
 
 const storageProvider = new LocalStorageProvider();
 const searchProvider = new PrismaResumeSearchProvider();
+const scoringProvider = new RuleBasedResumeScoringProvider();
 const RESUME_UPLOAD_DIR = path.join(process.cwd(), "uploads", "resumes");
 
 /**
@@ -124,17 +126,13 @@ export const searchResumesWorkflow = async (user, queryOptions) => {
   const result = await searchProvider.search(companyId, queryOptions);
 
   // Log activity
-  // Note: 'SEARCH' is not in the Prisma ActivityAction enum.
-  // Skipping logging to prevent Prisma validation errors without running schema migrations.
-  /*
   logActivity({
     companyId: companyId,
     performedByRole: user.role,
     entityType: ACTIVITY_ENTITIES.RESUME,
-    action: "SEARCH", 
+    action: ACTIVITY_ACTIONS.SEARCH, 
     metadata: { query: queryOptions.q || null, filtersApplied: Object.keys(queryOptions).length }
   }).catch(err => console.error("Failed to log resume search activity:", err));
-  */
 
   return result;
 };
@@ -153,4 +151,78 @@ export const getResumeSearchSuggestionsWorkflow = async (user, field) => {
 
   const suggestions = await searchProvider.getSuggestions(companyId, field);
   return suggestions;
+};
+
+export const scoreResumeWorkflow = async (user, resumeId) => {
+  const resume = await findResumeById(resumeId);
+  await validateResumeAccess(user, resume);
+
+  if (resume.parsingStatus !== "COMPLETED" || !resume.parsedData) {
+    throw new AppError("Resume must be successfully parsed before scoring", 400);
+  }
+
+  // Update status to processing
+  await prisma.resume.update({
+    where: { id: resumeId },
+    data: { aiScoreStatus: "PROCESSING" }
+  });
+
+  try {
+    const scoreResult = await scoringProvider.score(resume.parsedData);
+    
+    const updatedResume = await prisma.resume.update({
+      where: { id: resumeId },
+      data: {
+        aiScore: scoreResult.score,
+        aiScoreBreakdown: scoreResult.breakdown,
+        aiScoreVersion: scoreResult.version,
+        scoringProvider: scoreResult.providerName,
+        aiScoreStatus: "COMPLETED",
+        aiScoredAt: new Date()
+      }
+    });
+
+    const isRescore = resume.aiScore !== null;
+    
+    // Log activity
+    logActivity({
+      companyId: user.companyId || user.id, // For HR/Admin (for Candidate it's irrelevant or candidate's own tracking)
+      userId: user.role === "CANDIDATE" ? user.id : undefined,
+      performedByRole: user.role,
+      entityType: ACTIVITY_ENTITIES.RESUME,
+      entityId: resume.id,
+      action: isRescore ? ACTIVITY_ACTIONS.RE_SCORE : ACTIVITY_ACTIONS.SCORE,
+      metadata: { score: scoreResult.score, provider: scoreResult.providerName }
+    }).catch(err => console.error("Failed to log resume scoring activity:", err));
+
+    return updatedResume;
+  } catch (error) {
+    await prisma.resume.update({
+      where: { id: resumeId },
+      data: { aiScoreStatus: "FAILED" }
+    });
+    console.error("Resume scoring failed:", error);
+    throw new AppError("Failed to score resume", 500);
+  }
+};
+
+export const getResumeScoreWorkflow = async (user, resumeId) => {
+  const resume = await findResumeById(resumeId);
+  await validateResumeAccess(user, resume);
+
+  if (resume.aiScoreStatus !== "COMPLETED") {
+    return {
+      status: resume.aiScoreStatus,
+      message: "Score is not yet available."
+    };
+  }
+
+  return {
+    status: resume.aiScoreStatus,
+    score: resume.aiScore,
+    breakdown: resume.aiScoreBreakdown,
+    version: resume.aiScoreVersion,
+    provider: resume.scoringProvider,
+    scoredAt: resume.aiScoredAt
+  };
 };

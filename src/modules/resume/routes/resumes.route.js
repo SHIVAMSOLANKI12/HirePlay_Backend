@@ -8,7 +8,9 @@ import {
   parseResume,
   getParsedResume,
   searchResumes,
-  getResumeSearchSuggestions
+  getResumeSearchSuggestions,
+  scoreResume,
+  getResumeScore
 } from "../controllers/resumes.controller.js";
 
 const router = Router();
@@ -36,6 +38,12 @@ router.post("/:resumeId/parse", parseResume);
 
 // GET /api/v1/resumes/:resumeId/parsed
 router.get("/:resumeId/parsed", getParsedResume);
+
+// POST /api/v1/resumes/:resumeId/score
+router.post("/:resumeId/score", scoreResume);
+
+// GET /api/v1/resumes/:resumeId/score
+router.get("/:resumeId/score", getResumeScore);
 
 // GET /api/v1/resumes/:resumeId
 router.get("/:resumeId", previewResume);

@@ -1,7 +1,7 @@
 import asyncHandler from "../../../middleware/async.middleware.js";
 import { successResponse } from "../../../utils/apiResponse.js";
 import { getActiveResumeService } from "../services/resume.service.js";
-import { getResumeMetadataWorkflow, streamResumeWorkflow, searchResumesWorkflow, getResumeSearchSuggestionsWorkflow } from "../workflows/resume.workflow.js";
+import { getResumeMetadataWorkflow, streamResumeWorkflow, searchResumesWorkflow, getResumeSearchSuggestionsWorkflow, scoreResumeWorkflow, getResumeScoreWorkflow } from "../workflows/resume.workflow.js";
 import { parseResumeWorkflow, getParsedResumeWorkflow } from "../workflows/resume-parsing.workflow.js";
 
 /**
@@ -113,6 +113,36 @@ export const getResumeSearchSuggestions = asyncHandler(async (req, res) => {
     res,
     suggestions,
     "Suggestions fetched successfully",
+    200
+  );
+});
+
+/**
+ * Score a resume
+ */
+export const scoreResume = asyncHandler(async (req, res) => {
+  const { resumeId } = req.params;
+  const result = await scoreResumeWorkflow(req.user, resumeId);
+
+  return successResponse(
+    res,
+    result,
+    "Resume scored successfully",
+    200
+  );
+});
+
+/**
+ * Get resume score
+ */
+export const getResumeScore = asyncHandler(async (req, res) => {
+  const { resumeId } = req.params;
+  const scoreData = await getResumeScoreWorkflow(req.user, resumeId);
+
+  return successResponse(
+    res,
+    scoreData,
+    "Resume score fetched successfully",
     200
   );
 });
