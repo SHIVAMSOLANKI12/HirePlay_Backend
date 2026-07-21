@@ -2,7 +2,7 @@ import prisma from "../../../config/prisma.js";
 import AppError from "../../../utils/AppError.js";
 import { GeneratorRegistry } from "../engine/generators/GeneratorRegistry.js";
 
-export const generatePuzzlesForAttempt = async (assessmentId, candidateId) => {
+export const generatePuzzlesForAttempt = async (assessmentId, candidateId, attemptId) => {
   // 1. Fetch Assessment and its games
   const assessment = await prisma.assessment.findUnique({
     where: { id: assessmentId },
@@ -64,6 +64,16 @@ export const generatePuzzlesForAttempt = async (assessmentId, candidateId) => {
       }
     });
 
+    // Create Game Session for this puzzle
+    const newSession = await prisma.gameSession.create({
+      data: {
+        attemptId,
+        gameId: game.id,
+        seedId: newSeed.id,
+        status: "CREATED"
+      }
+    });
+
     generatedSeeds.push(newSeed);
   }
 
@@ -71,10 +81,29 @@ export const generatePuzzlesForAttempt = async (assessmentId, candidateId) => {
 };
 
 export const getCandidatePuzzles = async (assessmentId, candidateId) => {
-  return await prisma.gameSeed.findMany({
-    where: {
-      assessmentId,
-      candidateId
+  // We need the attempt first to get the sessions
+  const attempt = await prisma.assessmentAttempt.findFirst({
+    where: { assessmentId, candidateId },
+    include: {
+      sessions: {
+        include: {
+          seed: true
+        }
+      }
     }
+  });
+
+  if (!attempt) return [];
+
+  // Map the response to include sessionId and puzzle seed (without hiddenSolution)
+  return attempt.sessions.map(session => {
+    const puzzle = { ...session.seed };
+    delete puzzle.hiddenSolution;
+    
+    return {
+      sessionId: session.id,
+      status: session.status,
+      ...puzzle
+    };
   });
 };

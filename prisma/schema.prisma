@@ -785,6 +785,11 @@ enum ActivityAction {
   SCORE
   RE_SCORE
   GENERATE
+  START
+  PAUSE
+  RESUME
+  SUBMIT
+  FLAG
 }
 
 model ActivityLog {
@@ -842,6 +847,24 @@ enum GameDifficulty {
   INTERMEDIATE
   ADVANCED
   EXPERT
+}
+
+enum SessionState {
+  CREATED
+  READY
+  RUNNING
+  PAUSED
+  SUBMITTED
+  EXPIRED
+  CANCELLED
+  CHEAT_FLAGGED
+}
+
+enum CheatRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
 model Assessment {
@@ -923,18 +946,28 @@ model AssessmentResult {
 }
 
 model GameSession {
-  id          String   @id @default(uuid())
-  attemptId   String
-  gameId      String
-  seedId      String?
-  status      AttemptStatus @default(IN_PROGRESS)
-  startedAt   DateTime @default(now())
-  endedAt     DateTime?
+  id                String         @id @default(uuid())
+  attemptId         String
+  gameId            String
+  seedId            String?
+  status            SessionState   @default(CREATED)
+  
+  // Anti-Cheat & Tracking
+  cheatRiskScore    Int            @default(0)
+  cheatRiskLevel    CheatRiskLevel @default(LOW)
+  idleTimeMs        Int            @default(0)
+  pauseCount        Int            @default(0)
+  reconnectCount    Int            @default(0)
 
-  attempt     AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  game        AssessmentGame    @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  seed        GameSeed?         @relation(fields: [seedId], references: [id], onDelete: SetNull)
-  moves       GameMove[]
+  startedAt         DateTime       @default(now())
+  endedAt           DateTime?
+  submittedAt       DateTime?
+
+  attempt           AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  game              AssessmentGame    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  seed              GameSeed?         @relation(fields: [seedId], references: [id], onDelete: SetNull)
+  moves             GameMove[]
+  cheatEvents       CheatEvent[]
 
   @@index([attemptId])
   @@index([gameId])
@@ -964,13 +997,30 @@ model GameSeed {
 }
 
 model GameMove {
-  id          String   @id @default(uuid())
+  id             String      @id @default(uuid())
+  sessionId      String
+  moveNumber     Int
+  action         String
+  coordinates    Json?
+  moveDurationMs Int
+  metadata       Json?
+  timestamp      DateTime    @default(now())
+
+  session        GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, moveNumber])
+  @@index([sessionId])
+}
+
+model CheatEvent {
+  id          String      @id @default(uuid())
   sessionId   String
-  moveData    Json
-  timestamp   DateTime @default(now())
-
+  eventType   String      
+  metadata    Json?
+  timestamp   DateTime    @default(now())
+  
   session     GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
+  
   @@index([sessionId])
 }
 

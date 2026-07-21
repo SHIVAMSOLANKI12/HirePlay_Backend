@@ -5,6 +5,15 @@ import { ACTIVITY_EVENTS } from "../../activity/constants/activity.events.js";
 import prisma from "../../../config/prisma.js";
 
 export const generatePuzzleWorkflow = async (assessmentId, candidateId, user) => {
+  // 0. Ensure Assessment Exists
+  const assessment = await prisma.assessment.findUnique({
+    where: { id: assessmentId }
+  });
+  if (!assessment) {
+    const AppError = (await import("../../../utils/AppError.js")).default;
+    throw new AppError("Assessment not found", 404);
+  }
+
   // 1. Ensure Attempt Exists (Auto-create if not)
   let attempt = await prisma.assessmentAttempt.findFirst({
     where: { assessmentId, candidateId }
@@ -32,7 +41,7 @@ export const generatePuzzleWorkflow = async (assessmentId, candidateId, user) =>
   }
 
   // 2. Generate Puzzles
-  const puzzles = await generatePuzzlesForAttempt(assessmentId, candidateId);
+  const puzzles = await generatePuzzlesForAttempt(assessmentId, candidateId, attempt.id);
 
   // 3. Log Generation
   await logActivity({

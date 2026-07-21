@@ -56,5 +56,16 @@ export const ACTIVITY_EVENTS = {
 
   // Puzzles
   PUZZLE_GENERATED: "puzzle.generated",
-  PUZZLE_ASSIGNED: "puzzle.assigned"
+  PUZZLE_ASSIGNED: "puzzle.assigned",
+
+  // Game Session
+  SESSION_STARTED: "session.started",
+  SESSION_PAUSED: "session.paused",
+  SESSION_RESUMED: "session.resumed",
+  SESSION_SUBMITTED: "session.submitted",
+  SESSION_EXPIRED: "session.expired",
+  SESSION_CANCELLED: "session.cancelled",
+  
+  // Anti-Cheat
+  CHEAT_DETECTED: "cheat.detected"
 };

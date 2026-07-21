@@ -14,7 +14,9 @@ export class PuzzleMapper {
       seedData: seed.seedData, 
       // STRICTLY EXCLUDING: hiddenSolution, hash, version
       metadata: seed.metadata,
-      createdAt: seed.createdAt
+      createdAt: seed.createdAt,
+      ...(seed.sessionId && { sessionId: seed.sessionId }),
+      ...(seed.status && { status: seed.status })
     };
   }
 
