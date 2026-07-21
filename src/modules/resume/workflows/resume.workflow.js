@@ -1,12 +1,14 @@
 import AppError from "../../../utils/AppError.js";
 import prisma from "../../../config/prisma.js";
 import { findResumeById } from "../repositories/resume.repository.js";
+import { PrismaResumeSearchProvider } from "../services/search/PrismaResumeSearch.provider.js";
 import { LocalStorageProvider } from "../../../shared/providers/storage/local-storage.provider.js";
 import path from "path";
 import { logActivity } from "../../activity/services/activityLog.service.js";
 import { ACTIVITY_ENTITIES, ACTIVITY_ACTIONS } from "../../activity/constants/activity.constants.js";
 
 const storageProvider = new LocalStorageProvider();
+const searchProvider = new PrismaResumeSearchProvider();
 const RESUME_UPLOAD_DIR = path.join(process.cwd(), "uploads", "resumes");
 
 /**
@@ -99,6 +101,56 @@ export const streamResumeWorkflow = async (user, resumeId, res, isDownload = fal
       action: action,
       metadata: { originalName: resume.originalName, size: resume.fileSize },
       performedByRole: user.role
-    }).catch(err => console.error("Failed to log resume activity:", err));
+    }).catch(err => console.error("Failed to log resume download/preview activity:", err));
   });
+};
+
+export const searchResumesWorkflow = async (user, queryOptions) => {
+  if (user.role !== "HR" && user.role !== "COMPANY_ADMIN") {
+    throw new AppError("Forbidden: Only recruiters can search resumes.", 403);
+  }
+
+  const companyId = user.companyId || user.id;
+
+  // Process filters
+  if (queryOptions.skills && typeof queryOptions.skills === "string") {
+    queryOptions.skills = queryOptions.skills.split(",").map(s => s.trim()).filter(Boolean);
+  }
+
+  if (queryOptions.resumeStatus !== undefined) {
+    queryOptions.resumeStatus = queryOptions.resumeStatus === "true";
+  }
+
+  const result = await searchProvider.search(companyId, queryOptions);
+
+  // Log activity
+  // Note: 'SEARCH' is not in the Prisma ActivityAction enum.
+  // Skipping logging to prevent Prisma validation errors without running schema migrations.
+  /*
+  logActivity({
+    companyId: companyId,
+    performedByRole: user.role,
+    entityType: ACTIVITY_ENTITIES.RESUME,
+    action: "SEARCH", 
+    metadata: { query: queryOptions.q || null, filtersApplied: Object.keys(queryOptions).length }
+  }).catch(err => console.error("Failed to log resume search activity:", err));
+  */
+
+  return result;
+};
+
+export const getResumeSearchSuggestionsWorkflow = async (user, field) => {
+  if (user.role !== "HR" && user.role !== "COMPANY_ADMIN") {
+    throw new AppError("Forbidden: Only recruiters can fetch suggestions.", 403);
+  }
+
+  const companyId = user.companyId || user.id;
+
+  const validFields = ["skills"];
+  if (!validFields.includes(field)) {
+    throw new AppError(`Invalid field for suggestions. Allowed: ${validFields.join(", ")}`, 400);
+  }
+
+  const suggestions = await searchProvider.getSuggestions(companyId, field);
+  return suggestions;
 };

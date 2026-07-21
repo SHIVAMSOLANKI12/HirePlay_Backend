@@ -1,7 +1,7 @@
 import asyncHandler from "../../../middleware/async.middleware.js";
 import { successResponse } from "../../../utils/apiResponse.js";
 import { getActiveResumeService } from "../services/resume.service.js";
-import { getResumeMetadataWorkflow, streamResumeWorkflow } from "../workflows/resume.workflow.js";
+import { getResumeMetadataWorkflow, streamResumeWorkflow, searchResumesWorkflow, getResumeSearchSuggestionsWorkflow } from "../workflows/resume.workflow.js";
 import { parseResumeWorkflow, getParsedResumeWorkflow } from "../workflows/resume-parsing.workflow.js";
 
 /**
@@ -78,12 +78,41 @@ export const parseResume = asyncHandler(async (req, res) => {
 export const getParsedResume = asyncHandler(async (req, res) => {
   const { resumeId } = req.params;
   
-  const parsedData = await getParsedResumeWorkflow(req.user, resumeId);
+  const data = await getParsedResumeWorkflow(req.user, resumeId);
 
   return successResponse(
     res,
-    parsedData,
-    "Parsed resume data fetched successfully",
+    data,
+    "Parsed resume fetched successfully",
+    200
+  );
+});
+
+/**
+ * Search resumes (Recruiters only)
+ */
+export const searchResumes = asyncHandler(async (req, res) => {
+  const result = await searchResumesWorkflow(req.user, req.query);
+
+  return successResponse(
+    res,
+    result,
+    "Resumes fetched successfully",
+    200
+  );
+});
+
+/**
+ * Get resume search suggestions (Recruiters only)
+ */
+export const getResumeSearchSuggestions = asyncHandler(async (req, res) => {
+  const { field } = req.query;
+  const suggestions = await getResumeSearchSuggestionsWorkflow(req.user, field);
+
+  return successResponse(
+    res,
+    suggestions,
+    "Suggestions fetched successfully",
     200
   );
 });

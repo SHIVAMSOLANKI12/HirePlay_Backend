@@ -6,7 +6,9 @@ import {
   previewResume,
   downloadResume,
   parseResume,
-  getParsedResume
+  getParsedResume,
+  searchResumes,
+  getResumeSearchSuggestions
 } from "../controllers/resumes.controller.js";
 
 const router = Router();
@@ -16,6 +18,12 @@ router.use(requireAuth);
 
 // GET /api/v1/resumes/me - Alias to get Candidate's own active resume
 router.get("/me", getMyResume);
+
+// GET /api/v1/resumes/search/suggestions
+router.get("/search/suggestions", getResumeSearchSuggestions);
+
+// GET /api/v1/resumes/search
+router.get("/search", searchResumes);
 
 // GET /api/v1/resumes/:resumeId/metadata
 router.get("/:resumeId/metadata", getResumeMetadata);

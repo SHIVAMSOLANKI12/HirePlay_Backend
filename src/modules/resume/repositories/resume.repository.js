@@ -50,3 +50,5 @@ export const softDeleteResume = async (id) => {
     },
   });
 };
+
+
