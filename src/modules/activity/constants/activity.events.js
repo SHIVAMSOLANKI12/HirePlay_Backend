@@ -46,5 +46,11 @@ export const ACTIVITY_EVENTS = {
   RESUME_PARSE_FAILED: "resume.parse_failed",
   RESUME_SCORED: "resume.scored",
   RESUME_RESCORED: "resume.rescored",
-  RESUME_SEARCHED: "resume.searched"
+  RESUME_SEARCHED: "resume.searched",
+
+  // Assessments
+  ASSESSMENT_CREATED: "assessment.created",
+  ASSESSMENT_UPDATED: "assessment.updated",
+  ASSESSMENT_ASSIGNED: "assessment.assigned",
+  ASSESSMENT_DELETED: "assessment.deleted"
 };
