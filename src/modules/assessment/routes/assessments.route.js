@@ -6,7 +6,9 @@ import {
   getAssessments, 
   getAssessmentById, 
   updateAssessment, 
-  deleteAssessment 
+  deleteAssessment,
+  generateAssessmentPuzzles,
+  getCandidatePuzzles
 } from "../controllers/assessments.controller.js";
 
 const router = express.Router();
@@ -18,5 +20,9 @@ router.get("/", requireRole("COMPANY_ADMIN", "HR", "CANDIDATE"), getAssessments)
 router.get("/:id", requireRole("COMPANY_ADMIN", "HR", "CANDIDATE"), getAssessmentById);
 router.patch("/:id", requireRole("COMPANY_ADMIN", "HR"), updateAssessment);
 router.delete("/:id", requireRole("COMPANY_ADMIN", "HR"), deleteAssessment);
+
+// Puzzle Generation Endpoints
+router.post("/:id/generate", requireRole("COMPANY_ADMIN", "HR"), generateAssessmentPuzzles);
+router.get("/:id/puzzle", requireRole("CANDIDATE"), getCandidatePuzzles);
 
 export default router;

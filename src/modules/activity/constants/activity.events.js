@@ -52,5 +52,9 @@ export const ACTIVITY_EVENTS = {
   ASSESSMENT_CREATED: "assessment.created",
   ASSESSMENT_UPDATED: "assessment.updated",
   ASSESSMENT_ASSIGNED: "assessment.assigned",
-  ASSESSMENT_DELETED: "assessment.deleted"
+  ASSESSMENT_DELETED: "assessment.deleted",
+
+  // Puzzles
+  PUZZLE_GENERATED: "puzzle.generated",
+  PUZZLE_ASSIGNED: "puzzle.assigned"
 };

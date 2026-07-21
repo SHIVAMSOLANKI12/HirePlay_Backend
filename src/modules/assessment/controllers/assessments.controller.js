@@ -7,6 +7,8 @@ import {
   updateAssessmentWorkflow, 
   deleteAssessmentWorkflow 
 } from "../workflows/assessment.workflow.js";
+import { generatePuzzleWorkflow, getCandidatePuzzlesWorkflow } from "../workflows/puzzle.workflow.js";
+import { PuzzleMapper } from "../mappers/puzzle.mapper.js";
 
 export const createAssessment = asyncHandler(async (req, res) => {
   const assessment = await createAssessmentWorkflow(req.body, req.user);
@@ -32,4 +34,25 @@ export const updateAssessment = asyncHandler(async (req, res) => {
 export const deleteAssessment = asyncHandler(async (req, res) => {
   await deleteAssessmentWorkflow(req.params.id, req.user);
   successResponse(res, null, "Assessment deleted successfully");
+});
+
+export const generateAssessmentPuzzles = asyncHandler(async (req, res) => {
+  const { candidateId } = req.body;
+  if (!candidateId) {
+    return res.status(400).json({ success: false, message: "candidateId is required" });
+  }
+
+  const puzzles = await generatePuzzleWorkflow(req.params.id, candidateId, req.user);
+  
+  // Return admin-level DTO which includes hashes and versions, but NOT hiddenSolution
+  const dto = puzzles.map(PuzzleMapper.toAdminDto);
+  successResponse(res, dto, "Puzzles generated successfully", 201);
+});
+
+export const getCandidatePuzzles = asyncHandler(async (req, res) => {
+  const puzzles = await getCandidatePuzzlesWorkflow(req.params.id, req.user);
+  
+  // Strip everything sensitive for the candidate view
+  const dto = puzzles.map(PuzzleMapper.toCandidateDto);
+  successResponse(res, dto, "Puzzles retrieved successfully");
 });

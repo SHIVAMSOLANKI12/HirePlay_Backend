@@ -784,6 +784,7 @@ enum ActivityAction {
   SEARCH
   SCORE
   RE_SCORE
+  GENERATE
 }
 
 model ActivityLog {
@@ -940,17 +941,26 @@ model GameSession {
 }
 
 model GameSeed {
-  id          String   @id @default(uuid())
-  gameType    String
-  difficulty  GameDifficulty
-  seedData    Json
-  isUsed      Boolean  @default(false)
+  id               String   @id @default(uuid())
+  assessmentId     String
+  candidateId      String
+  gameType         String
+  difficulty       GameDifficulty
+  
+  seedData         Json
+  hiddenSolution   Json
+  hash             String   
+  version          String
+  metadata         Json?
+  
+  isUsed           Boolean  @default(false)
+  createdAt        DateTime @default(now())
 
-  createdAt   DateTime @default(now())
+  sessions         GameSession[]
 
-  sessions    GameSession[]
-
+  @@unique([assessmentId, candidateId, gameType])
   @@index([gameType, difficulty])
+  @@index([candidateId])
 }
 
 model GameMove {
