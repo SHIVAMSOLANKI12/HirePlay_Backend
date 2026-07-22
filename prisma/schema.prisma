@@ -790,6 +790,7 @@ enum ActivityAction {
   RESUME
   SUBMIT
   FLAG
+  VIEW
 }
 
 model ActivityLog {
@@ -867,6 +868,14 @@ enum CheatRiskLevel {
   CRITICAL
 }
 
+enum RecommendationLevel {
+  OUTSTANDING
+  HIGHLY_RECOMMENDED
+  RECOMMENDED
+  AVERAGE
+  NOT_RECOMMENDED
+}
+
 model Assessment {
   id          String   @id @default(uuid())
   companyId   String
@@ -877,6 +886,7 @@ model Assessment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   deletedAt   DateTime?
+  scoringProfile Json? // Custom weights: { accuracy, efficiency, decisionSpeed, cheatPenalty }
 
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   creator     User     @relation("AssessmentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
@@ -910,12 +920,19 @@ model AssessmentAttempt {
   id           String   @id @default(uuid())
   assessmentId String
   candidateId  String
-  status       AttemptStatus @default(NOT_STARTED)
-  score        Float?
-  startedAt    DateTime?
-  completedAt  DateTime?
+  status           AttemptStatus @default(NOT_STARTED)
+  score            Float?
+  accuracy         Float?
+  efficiency       Float?
+  decisionSpeed    Float?
+  recommendation   RecommendationLevel?
+  scoreBreakdown   Json?
+  rank             Int?           // Leaderboard rank snapshot
+  
+  startedAt        DateTime?
+  completedAt      DateTime?
 
-  createdAt    DateTime @default(now())
+  createdAt        DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
@@ -932,11 +949,16 @@ model AssessmentResult {
   id          String   @id @default(uuid())
   attemptId   String
   gameId      String
-  score       Float
-  maxScore    Float
-  metadata    Json?
+  score           Float
+  maxScore        Float
+  accuracy        Float?
+  efficiency      Float?
+  decisionSpeed   Float?
+  recommendation  RecommendationLevel?
+  scoreBreakdown  Json?
+  metadata        Json?
 
-  createdAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
 
   attempt     AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   game        AssessmentGame    @relation(fields: [gameId], references: [id], onDelete: Cascade)

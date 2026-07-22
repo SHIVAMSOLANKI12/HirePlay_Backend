@@ -9,6 +9,7 @@ export class AssessmentRepository {
         description: data.description,
         status: data.status,
         createdBy: data.createdBy,
+        scoringProfile: data.scoringProfile || null,
         games: {
           create: data.games || []
         }

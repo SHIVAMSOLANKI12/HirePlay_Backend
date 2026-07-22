@@ -8,6 +8,12 @@ import {
   deleteAssessmentWorkflow 
 } from "../workflows/assessment.workflow.js";
 import { generatePuzzleWorkflow, getCandidatePuzzlesWorkflow } from "../workflows/puzzle.workflow.js";
+import { 
+  getAssessmentDashboardWorkflow, 
+  getAssessmentLeaderboardWorkflow, 
+  getAssessmentResultsWorkflow, 
+  getResultByIdWorkflow 
+} from "../workflows/dashboard.workflow.js";
 import { PuzzleMapper } from "../mappers/puzzle.mapper.js";
 
 export const createAssessment = asyncHandler(async (req, res) => {
@@ -55,4 +61,26 @@ export const getCandidatePuzzles = asyncHandler(async (req, res) => {
   // Strip everything sensitive for the candidate view
   const dto = puzzles.map(PuzzleMapper.toCandidateDto);
   successResponse(res, dto, "Puzzles retrieved successfully");
+});
+
+export const getAssessmentDashboard = asyncHandler(async (req, res) => {
+  const dashboard = await getAssessmentDashboardWorkflow(req.params.id, req.user);
+  successResponse(res, dashboard, "Dashboard retrieved successfully");
+});
+
+export const getAssessmentLeaderboard = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+  const leaderboard = await getAssessmentLeaderboardWorkflow(req.params.id, req.user, page, limit);
+  successResponse(res, leaderboard, "Leaderboard retrieved successfully");
+});
+
+export const getAssessmentResults = asyncHandler(async (req, res) => {
+  const { page, limit } = req.query;
+  const results = await getAssessmentResultsWorkflow(req.params.id, req.user, page, limit);
+  successResponse(res, results, "Results retrieved successfully");
+});
+
+export const getResultById = asyncHandler(async (req, res) => {
+  const result = await getResultByIdWorkflow(req.params.id, req.user);
+  successResponse(res, result, "Result retrieved successfully");
 });

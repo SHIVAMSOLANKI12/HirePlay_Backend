@@ -9,6 +9,10 @@ import {
 } from "../services/gameSession.service.js";
 import { logActivity } from "../../activity/services/activityLog.service.js";
 import { ACTIVITY_ENTITIES, ACTIVITY_ACTIONS } from "../../activity/constants/activity.constants.js";
+import { RuleBasedScoringProvider } from "../engine/scoring/RuleBasedScoringProvider.js";
+import { RecommendationEngine } from "../engine/ranking/RecommendationEngine.js";
+import { RankingEngine } from "../engine/ranking/RankingEngine.js";
+import prisma from "../../../config/prisma.js";
 
 const buildActivityLog = (user, session, action, metadata = {}) => ({
   companyId: user.companyId, // Might be undefined if not in token, but good practice
@@ -28,6 +32,88 @@ export const startSessionWorkflow = async (sessionId, user) => {
 
 export const submitSessionWorkflow = async (sessionId, user) => {
   const session = await submitGameSession(sessionId, user.id);
+  
+  // 1. Fetch full session details for scoring
+  const fullSession = await prisma.gameSession.findUnique({
+    where: { id: sessionId },
+    include: {
+      seed: true,
+      moves: true,
+      attempt: {
+        include: {
+          assessment: {
+            select: { scoringProfile: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (fullSession && fullSession.seed) {
+    // 2. Score the session
+    const scoringProvider = new RuleBasedScoringProvider();
+    const timeTakenMs = new Date(fullSession.endedAt).getTime() - new Date(fullSession.startedAt).getTime() - fullSession.idleTimeMs;
+    
+    const sessionContext = {
+      timeTakenMs,
+      cheatRiskScore: fullSession.cheatRiskScore,
+      pauseCount: fullSession.pauseCount
+    };
+    
+    const scoringProfile = fullSession.attempt?.assessment?.scoringProfile || {};
+    
+    const resultStats = await scoringProvider.calculateScore(fullSession.seed.seedData, fullSession.moves, sessionContext, scoringProfile);
+    const recommendation = RecommendationEngine.evaluate(resultStats.score);
+
+    // 3. Create AssessmentResult
+    await prisma.assessmentResult.create({
+      data: {
+        attemptId: fullSession.attemptId,
+        gameId: fullSession.gameId,
+        score: resultStats.score,
+        maxScore: resultStats.maxScore,
+        accuracy: resultStats.accuracy,
+        efficiency: resultStats.efficiency,
+        decisionSpeed: resultStats.decisionSpeed,
+        recommendation,
+        scoreBreakdown: resultStats.metadata
+      }
+    });
+
+    // 4. Update the Attempt aggregate score (simplified: average of all game results)
+    const allResults = await prisma.assessmentResult.findMany({ where: { attemptId: fullSession.attemptId } });
+    const avgScore = allResults.reduce((sum, r) => sum + r.score, 0) / allResults.length;
+    const avgEfficiency = allResults.reduce((sum, r) => sum + (r.efficiency || 0), 0) / allResults.length;
+    const avgAccuracy = allResults.reduce((sum, r) => sum + (r.accuracy || 0), 0) / allResults.length;
+    const avgDecisionSpeed = allResults.reduce((sum, r) => sum + (r.decisionSpeed || 0), 0) / allResults.length;
+    
+    const finalRecommendation = RecommendationEngine.evaluate(avgScore);
+    
+    // Check if all games are submitted to mark attempt as COMPLETED
+    const allSessions = await prisma.gameSession.findMany({ where: { attemptId: fullSession.attemptId } });
+    const allSubmitted = allSessions.every(s => s.status === "SUBMITTED" || s.status === "EXPIRED" || s.status === "CANCELLED");
+
+    await prisma.assessmentAttempt.update({
+      where: { id: fullSession.attemptId },
+      data: {
+        score: avgScore,
+        efficiency: avgEfficiency,
+        accuracy: avgAccuracy,
+        decisionSpeed: avgDecisionSpeed,
+        recommendation: finalRecommendation,
+        status: allSubmitted ? "COMPLETED" : "IN_PROGRESS",
+        completedAt: allSubmitted ? new Date() : null
+      }
+    });
+
+    // 5. Asynchronously trigger Ranking Engine to avoid blocking the client request
+    if (allSubmitted) {
+      RankingEngine.recalculateAssessmentRanks(fullSession.attempt.assessmentId).catch(err => {
+        console.error("Failed to recalculate ranks:", err);
+      });
+    }
+  }
+
   await logActivity(buildActivityLog(user, session, ACTIVITY_ACTIONS.SUBMIT, { score: session.cheatRiskScore }));
   return session;
 };

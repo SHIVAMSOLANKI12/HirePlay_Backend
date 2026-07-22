@@ -10,6 +10,7 @@ export class AssessmentMapper {
       createdBy: assessment.createdBy,
       createdAt: assessment.createdAt,
       updatedAt: assessment.updatedAt,
+      scoringProfile: assessment.scoringProfile,
       games: assessment.games ? assessment.games.map(g => AssessmentMapper.toGameDto(g)) : [],
     };
   }
