@@ -49,6 +49,12 @@ model User {
   participantSessions InterviewParticipant[]
   interviewerScorecards InterviewScorecard[] @relation("InterviewerScorecards")
   candidateScorecards   InterviewScorecard[] @relation("CandidateScorecards")
+  candidateHiringDecisions HiringDecision[]   @relation("CandidateHiringDecisions")
+  createdHiringDecisions   HiringDecision[]   @relation("CreatedHiringDecisions")
+  decisionApprovals        DecisionApproval[]
+  decisionComments         DecisionComment[]
+  decisionHistories        DecisionHistory[]
+  decisionAudits           DecisionAudit[]
 }
 
 model RefreshToken {
@@ -104,6 +110,7 @@ model Company {
   interviewSessions  InterviewSession[]
   interviewScorecards InterviewScorecard[]
   aiAnalyses         InterviewAIAnalysis[]
+  hiringDecisions    HiringDecision[]
 }
 
 model HR {
@@ -251,6 +258,7 @@ model Application {
   notes        ApplicationNote[]
   interviews   Interview[]
   offer        Offer?
+  hiringDecisions HiringDecision[]
 
   @@unique([candidateId, jobId])
   @@index([candidateId])
@@ -1322,6 +1330,7 @@ model InterviewSession {
   notes                 InterviewNote[]
   scorecards            InterviewScorecard[]
   aiAnalyses            InterviewAIAnalysis[]
+  hiringDecisions       HiringDecision[]
 
   @@index([companyId])
   @@index([status])
@@ -1564,6 +1573,132 @@ model InterviewRecommendation {
 
   @@index([analysisId])
 }
+
+// ==========================================
+// HIRING DECISION WORKFLOW ENGINE (SPRINT 5)
+// ==========================================
+
+enum DecisionType {
+  STRONG_HIRE
+  HIRE
+  HOLD
+  REJECT
+  RE_INTERVIEW
+  NEXT_ROUND
+  OFFER_READY
+}
+
+enum DecisionStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ON_HOLD
+  ESCALATED
+  OFFER_READY
+  CLOSED
+}
+
+model HiringDecision {
+  id                   String             @id @default(uuid())
+  companyId            String
+  applicationId        String
+  sessionId            String?
+  candidateId          String
+  createdById          String
+  decisionType         DecisionType
+  status               DecisionStatus     @default(PENDING)
+  reason               String
+  overallScore         Float?
+  aiRecommendation     String?
+  version              Int                @default(1)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+
+  company              Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  application          Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  session              InterviewSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  candidate            User               @relation("CandidateHiringDecisions", fields: [candidateId], references: [id], onDelete: Cascade)
+  createdBy            User               @relation("CreatedHiringDecisions", fields: [createdById], references: [id], onDelete: Cascade)
+
+  approvals            DecisionApproval[]
+  comments             DecisionComment[]
+  history              DecisionHistory[]
+  audits               DecisionAudit[]
+
+  @@index([companyId])
+  @@index([applicationId])
+  @@index([sessionId])
+  @@index([candidateId])
+}
+
+model DecisionApproval {
+  id          String         @id @default(uuid())
+  decisionId  String
+  approverId  String
+  level       Int            @default(1)
+  status      DecisionStatus @default(PENDING)
+  comments    String?
+  actedAt     DateTime?
+  createdAt   DateTime       @default(now())
+
+  decision    HiringDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  approver    User           @relation(fields: [approverId], references: [id], onDelete: Cascade)
+
+  @@index([decisionId])
+  @@index([approverId])
+}
+
+model DecisionComment {
+  id          String         @id @default(uuid())
+  decisionId  String
+  authorId    String
+  comment     String
+  isPrivate   Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+
+  decision    HiringDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  author      User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([decisionId])
+  @@index([authorId])
+}
+
+model DecisionHistory {
+  id          String         @id @default(uuid())
+  decisionId  String
+  actorId     String
+  action      String
+  fromStatus  DecisionStatus?
+  toStatus    DecisionStatus
+  notes       String?
+  createdAt   DateTime       @default(now())
+
+  decision    HiringDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  actor       User           @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([decisionId])
+  @@index([actorId])
+}
+
+model DecisionAudit {
+  id          String         @id @default(uuid())
+  decisionId  String
+  actorId     String
+  fieldName   String
+  oldValue    String?
+  newValue    String?
+  reason      String?
+  createdAt   DateTime       @default(now())
+
+  decision    HiringDecision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  actor       User           @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([decisionId])
+  @@index([actorId])
+}
+
 
 
 

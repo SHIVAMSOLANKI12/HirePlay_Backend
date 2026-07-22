@@ -67,5 +67,14 @@ export const ACTIVITY_EVENTS = {
   SESSION_CANCELLED: "session.cancelled",
   
   // Anti-Cheat
-  CHEAT_DETECTED: "cheat.detected"
+  CHEAT_DETECTED: "cheat.detected",
+
+  // Hiring Decision
+  HIRING_DECISION_CREATED: "hiring_decision.created",
+  HIRING_DECISION_SUBMITTED: "hiring_decision.submitted",
+  HIRING_DECISION_APPROVED: "hiring_decision.approved",
+  HIRING_DECISION_REJECTED: "hiring_decision.rejected",
+  HIRING_DECISION_ESCALATED: "hiring_decision.escalated",
+  HIRING_DECISION_OFFER_READY: "hiring_decision.offer_ready",
+  HIRING_DECISION_REOPENED: "hiring_decision.reopened"
 };
