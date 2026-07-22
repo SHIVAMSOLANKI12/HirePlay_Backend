@@ -103,6 +103,7 @@ model Company {
   evaluationCriteria EvaluationCriteria[]
   interviewSessions  InterviewSession[]
   interviewScorecards InterviewScorecard[]
+  aiAnalyses         InterviewAIAnalysis[]
 }
 
 model HR {
@@ -1320,6 +1321,7 @@ model InterviewSession {
   events                InterviewEvent[]
   notes                 InterviewNote[]
   scorecards            InterviewScorecard[]
+  aiAnalyses            InterviewAIAnalysis[]
 
   @@index([companyId])
   @@index([status])
@@ -1461,6 +1463,108 @@ model InterviewerFeedback {
 
   scorecard             InterviewScorecard @relation(fields: [scorecardId], references: [id], onDelete: Cascade)
 }
+
+// ==========================================
+// AI INTERVIEW INTELLIGENCE ENGINE (SPRINT 4)
+// ==========================================
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AIProviderType {
+  RULE_BASED
+  OPENAI
+  GEMINI
+  CLAUDE
+  AZURE_OPENAI
+  CUSTOM
+}
+
+model InterviewAIAnalysis {
+  id                    String                   @id @default(uuid())
+  companyId             String
+  sessionId             String
+  version               Int                      @default(1)
+  provider              AIProviderType           @default(RULE_BASED)
+  confidenceScore       Float                    @default(85.0)
+  confidenceReason      String?
+  overallRecommendation String
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  company               Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  session               InterviewSession         @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  summary               InterviewSummary?
+  insights              InterviewInsight[]
+  risks                 InterviewRisk[]
+  recommendations       InterviewRecommendation[]
+
+  @@index([companyId])
+  @@index([sessionId])
+}
+
+model InterviewSummary {
+  id                     String              @id @default(uuid())
+  analysisId             String              @unique
+  candidateSummary       String
+  interviewSummary       String
+  technicalAnalysis      String?
+  communicationAnalysis  String?
+  problemSolvingAnalysis String?
+  leadershipAnalysis     String?
+  cultureFitAnalysis     String?
+  createdAt              DateTime            @default(now())
+
+  analysis               InterviewAIAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model InterviewInsight {
+  id                   String              @id @default(uuid())
+  analysisId           String
+  topStrengths         String[]            @default([])
+  topWeaknesses        String[]            @default([])
+  improvementAreas     String[]            @default([])
+  recommendedTraining  String[]            @default([])
+  suggestedNextFocus   String?
+  hiringReadinessScore Float               @default(80.0)
+  createdAt            DateTime            @default(now())
+
+  analysis             InterviewAIAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
+
+model InterviewRisk {
+  id          String              @id @default(uuid())
+  analysisId  String
+  riskType    String
+  severity    RiskSeverity        @default(LOW)
+  description String
+  mitigation  String?
+  createdAt   DateTime            @default(now())
+
+  analysis    InterviewAIAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
+
+model InterviewRecommendation {
+  id             String              @id @default(uuid())
+  analysisId     String
+  category       String
+  recommendation String
+  justification  String
+  createdAt      DateTime            @default(now())
+
+  analysis       InterviewAIAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
+
 
 
 

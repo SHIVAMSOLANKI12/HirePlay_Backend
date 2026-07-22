@@ -23,6 +23,7 @@ import assessmentModule from "./modules/assessment/assessment.module.js";
 import interviewTemplateModule from "./modules/interviewTemplate/interviewTemplate.module.js";
 import interviewSessionModule from "./modules/interviewSession/interviewSession.module.js";
 import interviewScorecardModule from "./modules/interviewScorecard/interviewScorecard.module.js";
+import interviewAIModule from "./modules/interviewAI/interviewAI.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -69,6 +70,7 @@ assessmentModule(app);
 interviewTemplateModule(app);
 interviewSessionModule(app);
 interviewScorecardModule(app);
+interviewAIModule(app);
 // Error handler should always be last
 app.use(errorHandler);
 
