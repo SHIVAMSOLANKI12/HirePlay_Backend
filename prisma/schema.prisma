@@ -47,6 +47,8 @@ model User {
   createdInterviewTemplates InterviewTemplate[]
   interviewNotes     InterviewNote[]
   participantSessions InterviewParticipant[]
+  interviewerScorecards InterviewScorecard[] @relation("InterviewerScorecards")
+  candidateScorecards   InterviewScorecard[] @relation("CandidateScorecards")
 }
 
 model RefreshToken {
@@ -100,6 +102,7 @@ model Company {
   interviewTemplates InterviewTemplate[]
   evaluationCriteria EvaluationCriteria[]
   interviewSessions  InterviewSession[]
+  interviewScorecards InterviewScorecard[]
 }
 
 model HR {
@@ -1316,6 +1319,7 @@ model InterviewSession {
   timeline              InterviewTimeline[]
   events                InterviewEvent[]
   notes                 InterviewNote[]
+  scorecards            InterviewScorecard[]
 
   @@index([companyId])
   @@index([status])
@@ -1381,6 +1385,83 @@ model InterviewNote {
   @@index([sessionId])
   @@index([authorId])
 }
+
+// ==========================================
+// INTERVIEW SCORECARD & EVALUATION ENGINE (SPRINT 3)
+// ==========================================
+
+enum ScorecardStatus {
+  DRAFT
+  SUBMITTED
+  LOCKED
+}
+
+enum RecommendationType {
+  STRONG_HIRE
+  HIRE
+  BORDERLINE
+  HOLD
+  REJECT
+}
+
+model InterviewScorecard {
+  id                   String             @id @default(uuid())
+  companyId            String
+  sessionId            String
+  interviewerId        String
+  candidateId          String
+  title                String
+  status               ScorecardStatus    @default(DRAFT)
+  overallScore         Float?
+  recommendation       RecommendationType?
+  recommendationReason String?
+  submittedAt          DateTime?
+  reopenedAt           DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deletedAt            DateTime?
+
+  company              Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  session              InterviewSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  interviewer          User               @relation("InterviewerScorecards", fields: [interviewerId], references: [id], onDelete: Cascade)
+  candidate            User               @relation("CandidateScorecards", fields: [candidateId], references: [id], onDelete: Cascade)
+  scores               EvaluationScore[]
+  feedback             InterviewerFeedback?
+
+  @@index([companyId])
+  @@index([sessionId])
+  @@index([interviewerId])
+  @@index([candidateId])
+}
+
+model EvaluationScore {
+  id            String             @id @default(uuid())
+  scorecardId   String
+  criterionName String
+  score         Float
+  maxScore      Float              @default(10.0)
+  weight        Float              @default(1.0)
+  comments      String?
+  createdAt     DateTime           @default(now())
+
+  scorecard     InterviewScorecard @relation(fields: [scorecardId], references: [id], onDelete: Cascade)
+
+  @@index([scorecardId])
+}
+
+model InterviewerFeedback {
+  id                    String             @id @default(uuid())
+  scorecardId           String             @unique
+  strengths             String[]           @default([])
+  weaknesses            String[]           @default([])
+  detailedNotes         String?
+  privateFeedback       String?
+  candidateVisibleNotes String?
+  createdAt             DateTime           @default(now())
+
+  scorecard             InterviewScorecard @relation(fields: [scorecardId], references: [id], onDelete: Cascade)
+}
+
 
 
 
