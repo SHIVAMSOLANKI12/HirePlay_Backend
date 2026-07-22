@@ -9,9 +9,11 @@ import {
   deleteAssessment,
   generateAssessmentPuzzles,
   getCandidatePuzzles,
-  getAssessmentDashboard,
-  getAssessmentLeaderboard,
-  getAssessmentResults
+  getAssessmentDashboard, 
+  getAssessmentLeaderboard, 
+  getAssessmentResults,
+  getAssessmentAnalytics,
+  getAssessmentBehaviourSummary
 } from "../controllers/assessments.controller.js";
 
 const router = express.Router();
@@ -32,5 +34,7 @@ router.get("/:id/puzzle", requireRole("CANDIDATE"), getCandidatePuzzles);
 router.get("/:id/dashboard", requireRole("COMPANY_ADMIN", "HR"), getAssessmentDashboard);
 router.get("/:id/leaderboard", requireRole("COMPANY_ADMIN", "HR"), getAssessmentLeaderboard);
 router.get("/:id/results", requireRole("COMPANY_ADMIN", "HR"), getAssessmentResults);
+router.get("/:id/analytics", requireRole("COMPANY_ADMIN", "HR"), getAssessmentAnalytics);
+router.get("/:id/behaviour-summary", requireRole("COMPANY_ADMIN", "HR"), getAssessmentBehaviourSummary);
 
 export default router;

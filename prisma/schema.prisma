@@ -43,6 +43,7 @@ model User {
   createdAssessments Assessment[]        @relation("AssessmentCreator")
   assessmentAttempts AssessmentAttempt[]
   leaderboardEntries Leaderboard[]
+  behaviours         AssessmentBehaviour[]
 }
 
 model RefreshToken {
@@ -892,6 +893,7 @@ model Assessment {
   creator     User     @relation("AssessmentCreator", fields: [createdBy], references: [id], onDelete: Restrict)
   games       AssessmentGame[]
   attempts    AssessmentAttempt[]
+  behaviours  AssessmentBehaviour[]
 
   @@index([companyId])
   @@index([status])
@@ -939,6 +941,7 @@ model AssessmentAttempt {
   candidate    User       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   results      AssessmentResult[]
   sessions     GameSession[]
+  behaviour    AssessmentBehaviour?
 
   @@index([assessmentId])
   @@index([candidateId])
@@ -1060,3 +1063,37 @@ model Leaderboard {
   @@unique([gameType, candidateId])
   @@index([gameType, topScore(sort: Desc)])
 }
+
+model AssessmentBehaviour {
+  id                  String   @id @default(uuid())
+  attemptId           String   @unique
+  assessmentId        String
+  candidateId         String
+
+  thinkingSpeed       Float
+  decisionQuality     Float
+  problemSolving      Float
+  planningAbility     Float
+  consistency         Float
+  riskTaking          Float
+  accuracy            Float
+  learningPattern     Float
+  stressIndicator     Float
+  confidenceIndicator Float
+
+  behaviourSummary    Json     // Array of trait strings (e.g. ["Fast Logical Thinker", "High Accuracy"])
+  metrics             Json?    // Move & timing metadata breakdown
+
+  analysisVersion     String   @default("v1.0")
+  analysisProvider    String   @default("RULE_BASED")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  attempt             AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  assessment          Assessment        @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  candidate           User              @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([candidateId])
+}
+

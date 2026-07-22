@@ -14,6 +14,8 @@ import {
   getAssessmentResultsWorkflow, 
   getResultByIdWorkflow 
 } from "../workflows/dashboard.workflow.js";
+import { getResultBehaviourWorkflow } from "../workflows/behaviour.workflow.js";
+import { getAssessmentAnalyticsWorkflow, getAssessmentBehaviourSummaryWorkflow } from "../workflows/analytics.workflow.js";
 import { PuzzleMapper } from "../mappers/puzzle.mapper.js";
 
 export const createAssessment = asyncHandler(async (req, res) => {
@@ -84,3 +86,19 @@ export const getResultById = asyncHandler(async (req, res) => {
   const result = await getResultByIdWorkflow(req.params.id, req.user);
   successResponse(res, result, "Result retrieved successfully");
 });
+
+export const getResultBehaviour = asyncHandler(async (req, res) => {
+  const behaviour = await getResultBehaviourWorkflow(req.params.id, req.user);
+  successResponse(res, behaviour, "Behaviour profile retrieved successfully");
+});
+
+export const getAssessmentAnalytics = asyncHandler(async (req, res) => {
+  const analytics = await getAssessmentAnalyticsWorkflow(req.params.id, req.user);
+  successResponse(res, analytics, "Assessment analytics retrieved successfully");
+});
+
+export const getAssessmentBehaviourSummary = asyncHandler(async (req, res) => {
+  const summary = await getAssessmentBehaviourSummaryWorkflow(req.params.id, req.user);
+  successResponse(res, summary, "Behaviour summary retrieved successfully");
+});
+

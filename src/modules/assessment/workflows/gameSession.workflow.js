@@ -12,6 +12,7 @@ import { ACTIVITY_ENTITIES, ACTIVITY_ACTIONS } from "../../activity/constants/ac
 import { RuleBasedScoringProvider } from "../engine/scoring/RuleBasedScoringProvider.js";
 import { RecommendationEngine } from "../engine/ranking/RecommendationEngine.js";
 import { RankingEngine } from "../engine/ranking/RankingEngine.js";
+import { generateBehaviourAnalysisWorkflow } from "./behaviour.workflow.js";
 import prisma from "../../../config/prisma.js";
 
 const buildActivityLog = (user, session, action, metadata = {}) => ({
@@ -106,10 +107,13 @@ export const submitSessionWorkflow = async (sessionId, user) => {
       }
     });
 
-    // 5. Asynchronously trigger Ranking Engine to avoid blocking the client request
+    // 5. Asynchronously trigger Ranking Engine & Behaviour Analysis Engine
     if (allSubmitted) {
       RankingEngine.recalculateAssessmentRanks(fullSession.attempt.assessmentId).catch(err => {
         console.error("Failed to recalculate ranks:", err);
+      });
+      generateBehaviourAnalysisWorkflow(fullSession.attemptId).catch(err => {
+        console.error("Failed to generate behaviour analysis:", err);
       });
     }
   }
