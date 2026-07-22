@@ -45,6 +45,8 @@ model User {
   leaderboardEntries Leaderboard[]
   behaviours         AssessmentBehaviour[]
   createdInterviewTemplates InterviewTemplate[]
+  interviewNotes     InterviewNote[]
+  participantSessions InterviewParticipant[]
 }
 
 model RefreshToken {
@@ -97,6 +99,7 @@ model Company {
   interviewQuestions InterviewQuestion[]
   interviewTemplates InterviewTemplate[]
   evaluationCriteria EvaluationCriteria[]
+  interviewSessions  InterviewSession[]
 }
 
 model HR {
@@ -454,6 +457,7 @@ model Interview {
   template        InterviewTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
   feedbacks       InterviewFeedback[]
   history         InterviewHistory[]
+  session         InterviewSession?
 
   @@index([applicationId])
   @@index([companyId])
@@ -799,6 +803,7 @@ enum ActivityAction {
   SUBMIT
   FLAG
   VIEW
+  COMPLETE
 }
 
 model ActivityLog {
@@ -1251,6 +1256,132 @@ model EvaluationCriteria {
   @@index([companyId])
   @@index([templateId])
 }
+
+// ==========================================
+// LIVE INTERVIEW SESSION ENGINE (SPRINT 2)
+// ==========================================
+
+enum InterviewSessionState {
+  SCHEDULED
+  READY
+  LIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  EXPIRED
+}
+
+enum ParticipantRole {
+  CANDIDATE
+  INTERVIEWER
+  HR
+  OBSERVER
+}
+
+enum MeetingProviderType {
+  INTERNAL
+  GOOGLE_MEET
+  ZOOM
+  MICROSOFT_TEAMS
+  CUSTOM
+}
+
+model InterviewSession {
+  id                    String                @id @default(uuid())
+  interviewId           String?               @unique
+  companyId             String
+  title                 String
+  description           String?
+  status                InterviewSessionState @default(SCHEDULED)
+  meetingProvider       MeetingProviderType   @default(INTERNAL)
+  meetingUrl            String?
+  meetingRoomId         String?
+  scheduledAt           DateTime
+  startedAt             DateTime?
+  pausedAt              DateTime?
+  resumedAt             DateTime?
+  completedAt           DateTime?
+  cancelledAt           DateTime?
+  durationMinutes       Int                   @default(45)
+  actualDurationSeconds Int                   @default(0)
+  metadata              Json?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  deletedAt             DateTime?
+
+  company               Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  interview             Interview?            @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  participants          InterviewParticipant[]
+  timeline              InterviewTimeline[]
+  events                InterviewEvent[]
+  notes                 InterviewNote[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model InterviewParticipant {
+  id        String          @id @default(uuid())
+  sessionId String
+  userId    String?
+  name      String
+  email     String
+  role      ParticipantRole @default(INTERVIEWER)
+  joinedAt  DateTime?
+  leftAt    DateTime?
+  isHost    Boolean         @default(false)
+
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model InterviewTimeline {
+  id          String   @id @default(uuid())
+  sessionId   String
+  eventType   String
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  session     InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model InterviewEvent {
+  id        String   @id @default(uuid())
+  sessionId String
+  name      String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model InterviewNote {
+  id        String   @id @default(uuid())
+  sessionId String
+  authorId  String
+  noteText  String
+  isPrivate Boolean  @default(false)
+  isPinned  Boolean  @default(false)
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  author    User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([authorId])
+}
+
 
 
 

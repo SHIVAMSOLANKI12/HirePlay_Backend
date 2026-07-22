@@ -21,6 +21,7 @@ import notificationModule from "./modules/notification/notification.module.js";
 import activityModule from "./modules/activity/activity.module.js";
 import assessmentModule from "./modules/assessment/assessment.module.js";
 import interviewTemplateModule from "./modules/interviewTemplate/interviewTemplate.module.js";
+import interviewSessionModule from "./modules/interviewSession/interviewSession.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -65,6 +66,7 @@ notificationModule(app);
 activityModule(app);
 assessmentModule(app);
 interviewTemplateModule(app);
+interviewSessionModule(app);
 // Error handler should always be last
 app.use(errorHandler);
 
