@@ -44,6 +44,7 @@ model User {
   assessmentAttempts AssessmentAttempt[]
   leaderboardEntries Leaderboard[]
   behaviours         AssessmentBehaviour[]
+  createdInterviewTemplates InterviewTemplate[]
 }
 
 model RefreshToken {
@@ -92,6 +93,10 @@ model Company {
   notifications      Notification[]
   notificationPreferences NotificationPreference[]
   assessments        Assessment[]
+  questionCategories QuestionCategory[]
+  interviewQuestions InterviewQuestion[]
+  interviewTemplates InterviewTemplate[]
+  evaluationCriteria EvaluationCriteria[]
 }
 
 model HR {
@@ -422,6 +427,7 @@ model Interview {
   parentInterviewId String?
   sequence          Int       @default(1)
   isFinalRound      Boolean   @default(false)
+  templateId        String?
   startedAt         DateTime?
   completedAt       DateTime?
   cancelledAt       DateTime?
@@ -445,6 +451,7 @@ model Interview {
   updatedBy       User?               @relation("InterviewUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   parentInterview Interview?          @relation("InterviewRounds", fields: [parentInterviewId], references: [id], onDelete: Cascade)
   childRounds     Interview[]         @relation("InterviewRounds")
+  template        InterviewTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
   feedbacks       InterviewFeedback[]
   history         InterviewHistory[]
 
@@ -1101,5 +1108,149 @@ model AssessmentBehaviour {
   @@index([candidateId])
   @@index([assessmentId, candidateId])
 }
+
+// ==========================================
+// INTERVIEW INTELLIGENCE PLATFORM (PHASE 11)
+// ==========================================
+
+enum TemplateStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum QuestionType {
+  TECHNICAL
+  BEHAVIOURAL
+  SITUATIONAL
+  PROBLEM_SOLVING
+  SYSTEM_DESIGN
+  HR
+  CUSTOM
+}
+
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
+}
+
+model QuestionCategory {
+  id          String              @id @default(uuid())
+  companyId   String
+  name        String
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  deletedAt   DateTime?
+
+  company     Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  questions   InterviewQuestion[]
+
+  @@index([companyId])
+}
+
+model InterviewQuestion {
+  id             String                 @id @default(uuid())
+  companyId      String
+  categoryId     String?
+  title          String
+  questionText   String
+  type           QuestionType
+  difficulty     QuestionDifficulty     @default(MEDIUM)
+  sampleAnswer   String?
+  scoringRubric  Json?
+  tags           String[]               @default([])
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  deletedAt      DateTime?
+
+  company        Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category       QuestionCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  templateLinks  TemplateQuestionLink[]
+
+  @@index([companyId])
+  @@index([type])
+  @@index([difficulty])
+}
+
+model InterviewTemplate {
+  id                String                 @id @default(uuid())
+  companyId         String
+  createdById       String
+  title             String
+  description       String?
+  status            TemplateStatus         @default(ACTIVE)
+  isDefault         Boolean                @default(false)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  deletedAt         DateTime?
+
+  company           Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy         User                   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  rounds            InterviewRoundTemplate[]
+  criteria          EvaluationCriteria[]
+  templateQuestions TemplateQuestionLink[]
+  interviews        Interview[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model TemplateQuestionLink {
+  id              String                  @id @default(uuid())
+  templateId      String
+  questionId      String
+  roundTemplateId String?
+  order           Int                     @default(0)
+
+  template        InterviewTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  question        InterviewQuestion       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  roundTemplate   InterviewRoundTemplate? @relation(fields: [roundTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+  @@index([questionId])
+}
+
+model InterviewRoundTemplate {
+  id                      String                 @id @default(uuid())
+  templateId              String
+  roundName               String
+  roundType               String
+  sequence                Int                    @default(1)
+  expectedDurationMinutes Int                    @default(45)
+  questionCount           Int                    @default(5)
+  passingScore            Float                  @default(70.0)
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  template                InterviewTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  questions               TemplateQuestionLink[]
+  criteria                EvaluationCriteria[]
+
+  @@index([templateId])
+}
+
+model EvaluationCriteria {
+  id              String                  @id @default(uuid())
+  companyId       String
+  templateId      String?
+  roundTemplateId String?
+  name            String
+  description     String?
+  weight          Float                   @default(1.0)
+  maxScore        Float                   @default(10.0)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  company         Company                 @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  template        InterviewTemplate?      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  roundTemplate   InterviewRoundTemplate? @relation(fields: [roundTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([templateId])
+}
+
 
 
