@@ -946,6 +946,8 @@ model AssessmentAttempt {
   @@index([assessmentId])
   @@index([candidateId])
   @@index([status])
+  @@index([assessmentId, status, rank])
+  @@index([assessmentId, candidateId, status])
 }
 
 model AssessmentResult {
@@ -968,6 +970,7 @@ model AssessmentResult {
 
   @@index([attemptId])
   @@index([gameId])
+  @@index([attemptId, score])
 }
 
 model GameSession {
@@ -996,6 +999,7 @@ model GameSession {
 
   @@index([attemptId])
   @@index([gameId])
+  @@index([attemptId, status])
 }
 
 model GameSeed {
@@ -1095,5 +1099,7 @@ model AssessmentBehaviour {
 
   @@index([assessmentId])
   @@index([candidateId])
+  @@index([assessmentId, candidateId])
 }
+
 
