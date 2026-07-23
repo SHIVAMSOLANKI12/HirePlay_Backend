@@ -63,6 +63,11 @@ model User {
   lifecycleHistoryChanges  EmployeeLifecycleHistory[]
   assignedTasks            OnboardingTask[]          @relation("AssignedTasks")
   completedTasks           OnboardingTask[]          @relation("CompletedTasks")
+  candidateDocuments       EmployeeDocument[]        @relation("CandidateDocuments")
+  verifiedDocuments        EmployeeDocument[]        @relation("VerifiedDocuments")
+  uploadedVersions         DocumentVersion[]
+  documentVerifications    DocumentVerification[]
+  documentApprovals        DocumentApprovalHistory[]
 }
 
 model RefreshToken {
@@ -122,6 +127,8 @@ model Company {
   onboardingRecords  OnboardingRecord[]
   employeeProfiles   EmployeeProfile[]
   onboardingTaskTemplates OnboardingTaskTemplate[]
+  employeeDocuments  EmployeeDocument[]
+  documentTemplates  DocumentTemplate[]
 }
 
 model HR {
@@ -1760,6 +1767,7 @@ model OnboardingRecord {
   joiningWorkflow  JoiningWorkflow?
   employeeProfile  EmployeeProfile?
   tasks            OnboardingTask[]
+  documents        EmployeeDocument[]
 
   @@index([companyId])
   @@index([candidateId])
@@ -1909,6 +1917,148 @@ model OnboardingTask {
   @@index([assignedToId])
   @@index([status])
 }
+
+// ==========================================
+// EMPLOYEE DOCUMENT MANAGEMENT ENGINE (PHASE 12 SPRINT 2)
+// ==========================================
+
+enum DocumentType {
+  AADHAAR
+  PAN
+  PASSPORT
+  DRIVING_LICENSE
+  BANK_PASSBOOK
+  CANCELLED_CHEQUE
+  PHOTO
+  SIGNATURE
+  EDUCATION_CERTIFICATE
+  EXPERIENCE_CERTIFICATE
+  OFFER_LETTER
+  RESUME
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING_UPLOAD
+  UPLOADED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+  REUPLOAD_REQUIRED
+}
+
+model DocumentTemplate {
+  id                 String       @id @default(uuid())
+  companyId          String
+  documentType       DocumentType
+  title              String
+  description        String?
+  isRequired         Boolean      @default(true)
+  allowedMimeTypes   Json?
+  maxFileSizeMb      Float        @default(5.0)
+  requiresExpiry     Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime?
+
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  documents EmployeeDocument[]
+
+  @@index([companyId])
+  @@index([documentType])
+}
+
+model EmployeeDocument {
+  id             String         @id @default(uuid())
+  companyId      String
+  onboardingId   String
+  candidateId    String
+  templateId     String?
+  documentType   DocumentType
+  title          String
+  status         DocumentStatus @default(UPLOADED)
+  currentVersion Int            @default(1)
+  fileUrl        String
+  fileName       String
+  mimeType       String
+  fileSize       Int
+  storageKey     String
+  expiryDate     DateTime?
+  remarks        String?
+  verifiedById   String?
+  verifiedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  company             Company                     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  onboarding          OnboardingRecord            @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  candidate           User                        @relation("CandidateDocuments", fields: [candidateId], references: [id], onDelete: Cascade)
+  template            DocumentTemplate?           @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  verifiedBy          User?                       @relation("VerifiedDocuments", fields: [verifiedById], references: [id], onDelete: SetNull)
+  versions            DocumentVersion[]
+  verifications       DocumentVerification[]
+  approvalHistories   DocumentApprovalHistory[]
+
+  @@index([companyId])
+  @@index([onboardingId])
+  @@index([candidateId])
+  @@index([status])
+}
+
+model DocumentVersion {
+  id            String           @id @default(uuid())
+  documentId    String
+  versionNumber Int
+  fileUrl       String
+  fileName      String
+  mimeType      String
+  fileSize      Int
+  storageKey    String
+  uploadedById  String
+  changeReason  String?
+  createdAt     DateTime         @default(now())
+
+  document   EmployeeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  uploadedBy User             @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([versionNumber])
+}
+
+model DocumentVerification {
+  id            String           @id @default(uuid())
+  documentId    String
+  versionNumber Int
+  action        String
+  verifiedById  String
+  remarks       String?
+  createdAt     DateTime         @default(now())
+
+  document   EmployeeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  verifiedBy User             @relation(fields: [verifiedById], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([verifiedById])
+}
+
+model DocumentApprovalHistory {
+  id            String           @id @default(uuid())
+  documentId    String
+  performedById String
+  fromStatus    DocumentStatus?
+  toStatus      DocumentStatus
+  remarks       String?
+  createdAt     DateTime         @default(now())
+
+  document    EmployeeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  performedBy User             @relation(fields: [performedById], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([performedById])
+}
+
 
 
 

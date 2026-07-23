@@ -83,16 +83,19 @@ export const getTaskTemplates = asyncHandler(async (req, res) => {
 });
 
 export const createOnboardingTask = asyncHandler(async (req, res) => {
-  const task = await createOnboardingTaskWorkflow(req.params.id, req.body, req.user);
+  const onboardingId = req.params.onboardingId || req.params.id;
+  const task = await createOnboardingTaskWorkflow(onboardingId, req.body, req.user);
   successResponse(res, task, "Onboarding task created successfully", 201);
 });
 
 export const getOnboardingTasks = asyncHandler(async (req, res) => {
-  const tasks = await getOnboardingTasksWorkflow(req.params.id, req.user);
+  const onboardingId = req.params.onboardingId || req.params.id;
+  const tasks = await getOnboardingTasksWorkflow(onboardingId, req.user);
   successResponse(res, tasks, "Onboarding tasks retrieved successfully");
 });
 
 export const updateOnboardingTaskStatus = asyncHandler(async (req, res) => {
-  const task = await updateOnboardingTaskStatusWorkflow(req.params.id, req.params.taskId, req.body, req.user);
+  const onboardingId = req.params.onboardingId || req.params.id;
+  const task = await updateOnboardingTaskStatusWorkflow(onboardingId, req.params.taskId, req.body, req.user);
   successResponse(res, task, "Onboarding task status updated successfully");
 });

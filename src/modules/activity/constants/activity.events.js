@@ -84,5 +84,13 @@ export const ACTIVITY_EVENTS = {
   ONBOARDING_UPDATED: "onboarding.updated",
   ONBOARDING_COMPLETED: "onboarding.completed",
   EMPLOYEE_PROFILE_CREATED: "employee_profile.created",
-  EMPLOYEE_JOINED: "employee.joined"
+  EMPLOYEE_JOINED: "employee.joined",
+
+  // Document Management Engine
+  DOCUMENT_UPLOADED: "document.uploaded",
+  DOCUMENT_UPDATED: "document.updated",
+  DOCUMENT_APPROVED: "document.approved",
+  DOCUMENT_REJECTED: "document.rejected",
+  DOCUMENT_REUPLOAD_REQUESTED: "document.reupload_requested",
+  DOCUMENT_DELETED: "document.deleted"
 };
