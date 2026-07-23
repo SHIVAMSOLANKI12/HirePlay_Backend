@@ -76,5 +76,13 @@ export const ACTIVITY_EVENTS = {
   HIRING_DECISION_REJECTED: "hiring_decision.rejected",
   HIRING_DECISION_ESCALATED: "hiring_decision.escalated",
   HIRING_DECISION_OFFER_READY: "hiring_decision.offer_ready",
-  HIRING_DECISION_REOPENED: "hiring_decision.reopened"
+  HIRING_DECISION_REOPENED: "hiring_decision.reopened",
+
+  // Onboarding & Employee Profile
+  ONBOARDING_CREATED: "onboarding.created",
+  ONBOARDING_STARTED: "onboarding.started",
+  ONBOARDING_UPDATED: "onboarding.updated",
+  ONBOARDING_COMPLETED: "onboarding.completed",
+  EMPLOYEE_PROFILE_CREATED: "employee_profile.created",
+  EMPLOYEE_JOINED: "employee.joined"
 };

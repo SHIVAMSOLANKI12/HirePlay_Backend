@@ -55,6 +55,14 @@ model User {
   decisionComments         DecisionComment[]
   decisionHistories        DecisionHistory[]
   decisionAudits           DecisionAudit[]
+  candidateOnboardings     OnboardingRecord[]        @relation("CandidateOnboardings")
+  hrOnboardings            OnboardingRecord[]        @relation("HROnboardings")
+  managerOnboardings       OnboardingRecord[]        @relation("ManagerOnboardings")
+  employeeProfile          EmployeeProfile?          @relation("UserProfile")
+  managedEmployees         EmployeeProfile[]         @relation("ManagerEmployees")
+  lifecycleHistoryChanges  EmployeeLifecycleHistory[]
+  assignedTasks            OnboardingTask[]          @relation("AssignedTasks")
+  completedTasks           OnboardingTask[]          @relation("CompletedTasks")
 }
 
 model RefreshToken {
@@ -111,6 +119,9 @@ model Company {
   interviewScorecards InterviewScorecard[]
   aiAnalyses         InterviewAIAnalysis[]
   hiringDecisions    HiringDecision[]
+  onboardingRecords  OnboardingRecord[]
+  employeeProfiles   EmployeeProfile[]
+  onboardingTaskTemplates OnboardingTaskTemplate[]
 }
 
 model HR {
@@ -604,6 +615,7 @@ model Offer {
 
   timelines OfferTimeline[]
   auditLogs OfferAuditLog[]
+  onboardingRecord OnboardingRecord?
 
   @@index([companyId])
   @@index([candidateId])
@@ -777,6 +789,8 @@ enum ActivityEntity {
   SYSTEM
   RESUME
   ASSESSMENT
+  ONBOARDING
+  EMPLOYEE_PROFILE
 }
 
 enum ActivityAction {
@@ -1698,6 +1712,205 @@ model DecisionAudit {
   @@index([decisionId])
   @@index([actorId])
 }
+
+// ==========================================
+// EMPLOYEE ONBOARDING & PRE-JOINING FOUNDATION (PHASE 12 SPRINT 1)
+// ==========================================
+
+enum EmployeeLifecycle {
+  PRE_JOINING
+  JOINING_PENDING
+  JOINED
+  PROBATION
+  CONFIRMED
+  INACTIVE
+  EXITED
+}
+
+enum OnboardingStatus {
+  DRAFT
+  IN_PROGRESS
+  JOINING_PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model OnboardingRecord {
+  id                  String           @id @default(uuid())
+  companyId           String
+  offerId             String           @unique
+  candidateId         String
+  hrOwnerId           String
+  managerId           String?
+  status              OnboardingStatus @default(IN_PROGRESS)
+  currentStage        String           @default("Pre-Joining Document Verification")
+  progressPercentage  Float            @default(0.0)
+  expectedJoiningDate DateTime
+  actualJoiningDate   DateTime?
+  notes               String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  deletedAt           DateTime?
+
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  offer            Offer             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  candidate        User              @relation("CandidateOnboardings", fields: [candidateId], references: [id], onDelete: Cascade)
+  hrOwner          User              @relation("HROnboardings", fields: [hrOwnerId], references: [id], onDelete: Cascade)
+  manager          User?             @relation("ManagerOnboardings", fields: [managerId], references: [id], onDelete: SetNull)
+  joiningWorkflow  JoiningWorkflow?
+  employeeProfile  EmployeeProfile?
+  tasks            OnboardingTask[]
+
+  @@index([companyId])
+  @@index([candidateId])
+  @@index([offerId])
+  @@index([hrOwnerId])
+  @@index([status])
+}
+
+model JoiningWorkflow {
+  id                String           @id @default(uuid())
+  onboardingId      String           @unique
+  title             String           @default("Standard Joining Workflow")
+  assignedHrId      String?
+  assignedManagerId String?
+  stages            Json?
+  completedStages   Int              @default(0)
+  totalStages       Int              @default(4)
+  isCompleted       Boolean          @default(false)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  onboarding        OnboardingRecord @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+
+  @@index([onboardingId])
+}
+
+model EmployeeProfile {
+  id                    String            @id @default(uuid())
+  companyId             String
+  userId                String            @unique
+  onboardingId          String?           @unique
+  employeeNumber        String
+  employmentType        EmploymentType    @default(FULL_TIME)
+  department            String
+  designation           String
+  managerId             String?
+  joiningDate           DateTime
+  probationPeriodMonths Int               @default(3)
+  probationEndDate      DateTime?
+  workLocation          String            @default("Head Office")
+  workMode              WorkMode          @default(ONSITE)
+  salary                Float?
+  currency              String            @default("USD")
+  lifecycleState        EmployeeLifecycle @default(PRE_JOINING)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  deletedAt             DateTime?
+
+  company          Company                   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user             User                      @relation("UserProfile", fields: [userId], references: [id], onDelete: Cascade)
+  onboarding       OnboardingRecord?         @relation(fields: [onboardingId], references: [id], onDelete: SetNull)
+  manager          User?                     @relation("ManagerEmployees", fields: [managerId], references: [id], onDelete: SetNull)
+  lifecycleHistory EmployeeLifecycleHistory[]
+
+  @@unique([companyId, employeeNumber])
+  @@index([companyId])
+  @@index([userId])
+  @@index([lifecycleState])
+  @@index([department])
+}
+
+model EmployeeLifecycleHistory {
+  id                String             @id @default(uuid())
+  employeeProfileId String
+  performedById     String
+  fromState         EmployeeLifecycle?
+  toState           EmployeeLifecycle
+  reason            String?
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+
+  employeeProfile   EmployeeProfile    @relation(fields: [employeeProfileId], references: [id], onDelete: Cascade)
+  performedBy       User               @relation(fields: [performedById], references: [id], onDelete: Cascade)
+
+  @@index([employeeProfileId])
+  @@index([performedById])
+}
+
+// ==========================================
+// ONBOARDING TASK ENGINE FOUNDATION
+// ==========================================
+
+enum TaskCategory {
+  DOCUMENT
+  BACKGROUND_CHECK
+  IT_PROVISIONING
+  ORIENTATION
+  COMPLIANCE
+  CUSTOM
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  FAILED
+}
+
+model OnboardingTaskTemplate {
+  id                 String       @id @default(uuid())
+  companyId          String
+  title              String
+  description        String?
+  category           TaskCategory @default(CUSTOM)
+  isRequired         Boolean      @default(true)
+  assignedRole       String       @default("HR")
+  daysDueFromJoining Int          @default(0)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  deletedAt          DateTime?
+
+  company Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tasks   OnboardingTask[]
+
+  @@index([companyId])
+  @@index([category])
+}
+
+model OnboardingTask {
+  id            String                  @id @default(uuid())
+  onboardingId  String
+  templateId    String?
+  title         String
+  description   String?
+  category      TaskCategory            @default(CUSTOM)
+  status        TaskStatus              @default(PENDING)
+  isRequired    Boolean                 @default(true)
+  assignedToId  String?
+  assignedRole  String                  @default("HR")
+  dueDate       DateTime?
+  completedAt   DateTime?
+  completedById String?
+  comments      String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  onboarding  OnboardingRecord        @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  template    OnboardingTaskTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  assignedTo  User?                   @relation("AssignedTasks", fields: [assignedToId], references: [id], onDelete: SetNull)
+  completedBy User?                   @relation("CompletedTasks", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@index([onboardingId])
+  @@index([templateId])
+  @@index([assignedToId])
+  @@index([status])
+}
+
+
 
 
 

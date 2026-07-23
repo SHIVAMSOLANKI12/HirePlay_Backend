@@ -25,6 +25,7 @@ import interviewSessionModule from "./modules/interviewSession/interviewSession.
 import interviewScorecardModule from "./modules/interviewScorecard/interviewScorecard.module.js";
 import interviewAIModule from "./modules/interviewAI/interviewAI.module.js";
 import hiringDecisionModule from "./modules/hiringDecision/hiringDecision.module.js";
+import onboardingModule from "./modules/onboarding/onboarding.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -73,6 +74,7 @@ interviewSessionModule(app);
 interviewScorecardModule(app);
 interviewAIModule(app);
 hiringDecisionModule(app);
+onboardingModule(app);
 // Error handler should always be last
 app.use(errorHandler);
 

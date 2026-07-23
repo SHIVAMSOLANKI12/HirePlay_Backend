@@ -1,0 +1,38 @@
+import express from "express";
+import { requireAuth } from "../../../middleware/requireAuth.middleware.js";
+import { requireRole } from "../../../middleware/requireRole.middleware.js";
+import {
+  createOnboarding,
+  getOnboardings,
+  getOnboardingById,
+  updateOnboarding,
+  startOnboarding,
+  completeOnboarding,
+  createTaskTemplate,
+  getTaskTemplates,
+  createOnboardingTask,
+  getOnboardingTasks,
+  updateOnboardingTaskStatus
+} from "../controllers/onboarding.controller.js";
+
+const router = express.Router();
+
+router.use(requireAuth);
+
+router.post("/", requireRole("COMPANY_ADMIN", "HR"), createOnboarding);
+router.get("/", requireRole("COMPANY_ADMIN", "HR"), getOnboardings);
+router.get("/:id", requireRole("COMPANY_ADMIN", "HR"), getOnboardingById);
+router.patch("/:id", requireRole("COMPANY_ADMIN", "HR"), updateOnboarding);
+
+router.post("/:id/start", requireRole("COMPANY_ADMIN", "HR"), startOnboarding);
+router.post("/:id/complete", requireRole("COMPANY_ADMIN", "HR"), completeOnboarding);
+
+// Task Engine Routes
+router.post("/task-templates", requireRole("COMPANY_ADMIN", "HR"), createTaskTemplate);
+router.get("/task-templates", requireRole("COMPANY_ADMIN", "HR"), getTaskTemplates);
+
+router.post("/:id/tasks", requireRole("COMPANY_ADMIN", "HR"), createOnboardingTask);
+router.get("/:id/tasks", requireRole("COMPANY_ADMIN", "HR"), getOnboardingTasks);
+router.patch("/:id/tasks/:taskId", requireRole("COMPANY_ADMIN", "HR"), updateOnboardingTaskStatus);
+
+export default router;
