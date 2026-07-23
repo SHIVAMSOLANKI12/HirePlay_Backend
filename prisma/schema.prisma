@@ -68,6 +68,11 @@ model User {
   uploadedVersions         DocumentVersion[]
   documentVerifications    DocumentVerification[]
   documentApprovals        DocumentApprovalHistory[]
+  candidateVerifications   BackgroundVerification[] @relation("CandidateVerifications")
+  assignedHrVerifications  BackgroundVerification[] @relation("AssignedHrVerifications")
+  verificationChecks       VerificationCheck[]
+  verificationHistories    VerificationHistory[]
+  verificationAttachments  VerificationAttachment[]
 }
 
 model RefreshToken {
@@ -129,6 +134,7 @@ model Company {
   onboardingTaskTemplates OnboardingTaskTemplate[]
   employeeDocuments  EmployeeDocument[]
   documentTemplates  DocumentTemplate[]
+  backgroundVerifications BackgroundVerification[]
 }
 
 model HR {
@@ -1768,6 +1774,7 @@ model OnboardingRecord {
   employeeProfile  EmployeeProfile?
   tasks            OnboardingTask[]
   documents        EmployeeDocument[]
+  backgroundVerification BackgroundVerification?
 
   @@index([companyId])
   @@index([candidateId])
@@ -2058,6 +2065,118 @@ model DocumentApprovalHistory {
   @@index([documentId])
   @@index([performedById])
 }
+
+// ==========================================
+// BACKGROUND VERIFICATION ENGINE (PHASE 12 SPRINT 3)
+// ==========================================
+
+enum VerificationType {
+  IDENTITY
+  ADDRESS
+  EDUCATION
+  EMPLOYMENT
+  CRIMINAL_RECORD
+  REFERENCE
+  BANK
+  CUSTOM
+}
+
+enum VerificationStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PENDING_INFORMATION
+  VERIFIED
+  FAILED
+  REJECTED
+  CANCELLED
+}
+
+model BackgroundVerification {
+  id            String             @id @default(uuid())
+  companyId     String
+  onboardingId  String             @unique
+  candidateId   String
+  assignedHrId  String?
+  status        VerificationStatus @default(NOT_STARTED)
+  overallResult String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  remarks       String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  deletedAt     DateTime?
+
+  company      Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  onboarding   OnboardingRecord         @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  candidate    User                     @relation("CandidateVerifications", fields: [candidateId], references: [id], onDelete: Cascade)
+  assignedHr   User?                    @relation("AssignedHrVerifications", fields: [assignedHrId], references: [id], onDelete: SetNull)
+  checks       VerificationCheck[]
+  history      VerificationHistory[]
+  attachments  VerificationAttachment[]
+
+  @@index([companyId])
+  @@index([onboardingId])
+  @@index([candidateId])
+  @@index([status])
+}
+
+model VerificationCheck {
+  id                  String             @id @default(uuid())
+  verificationId     String
+  type                VerificationType   @default(CUSTOM)
+  title               String
+  status              VerificationStatus @default(NOT_STARTED)
+  verifiedById        String?
+  verifiedAt          DateTime?
+  providerName        String             @default("MANUAL")
+  externalReferenceId String?
+  resultData          Json?
+  remarks             String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  verification BackgroundVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  verifiedBy   User?                  @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@index([verificationId])
+  @@index([type])
+  @@index([status])
+}
+
+model VerificationHistory {
+  id             String                 @id @default(uuid())
+  verificationId String
+  performedById  String
+  fromStatus     VerificationStatus?
+  toStatus       VerificationStatus
+  action         String
+  remarks        String?
+  createdAt      DateTime               @default(now())
+
+  verification BackgroundVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  performedBy  User                   @relation(fields: [performedById], references: [id], onDelete: Cascade)
+
+  @@index([verificationId])
+  @@index([performedById])
+}
+
+model VerificationAttachment {
+  id             String                 @id @default(uuid())
+  verificationId String
+  checkId        String?
+  fileName       String
+  fileUrl        String
+  mimeType       String
+  fileSize       Int
+  uploadedById   String
+  createdAt      DateTime               @default(now())
+
+  verification BackgroundVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  uploadedBy   User                   @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([verificationId])
+}
+
 
 
 

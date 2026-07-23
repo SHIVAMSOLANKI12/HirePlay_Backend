@@ -16,6 +16,7 @@ import {
 } from "../controllers/onboarding.controller.js";
 import { documentUploadMiddleware, handleDocumentMulterError } from "../../document/middlewares/documentUpload.middleware.js";
 import { uploadDocument, getDocumentsByOnboarding } from "../../document/controllers/employeeDocument.controller.js";
+import { createVerification } from "../../bgv/controllers/bgv.controller.js";
 
 const router = express.Router();
 
@@ -49,5 +50,8 @@ router.post(
   uploadDocument
 );
 router.get("/:onboardingId/documents", getDocumentsByOnboarding);
+
+// Background Verification Engine Routes for Onboarding
+router.post("/:onboardingId/background-verification", requireRole("COMPANY_ADMIN", "HR"), createVerification);
 
 export default router;

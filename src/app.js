@@ -27,6 +27,7 @@ import interviewAIModule from "./modules/interviewAI/interviewAI.module.js";
 import hiringDecisionModule from "./modules/hiringDecision/hiringDecision.module.js";
 import onboardingModule from "./modules/onboarding/onboarding.module.js";
 import documentModule from "./modules/document/document.module.js";
+import bgvModule from "./modules/bgv/bgv.module.js";
 import logger from "./config/logger.js";
 import limiter from "./config/rateLimiter.js";
 import corsMiddleware from "./config/cors.js";
@@ -77,6 +78,7 @@ interviewAIModule(app);
 hiringDecisionModule(app);
 onboardingModule(app);
 documentModule(app);
+bgvModule(app);
 // Error handler should always be last
 app.use(errorHandler);
 

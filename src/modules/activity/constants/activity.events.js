@@ -92,5 +92,14 @@ export const ACTIVITY_EVENTS = {
   DOCUMENT_APPROVED: "document.approved",
   DOCUMENT_REJECTED: "document.rejected",
   DOCUMENT_REUPLOAD_REQUESTED: "document.reupload_requested",
-  DOCUMENT_DELETED: "document.deleted"
+  DOCUMENT_DELETED: "document.deleted",
+
+  // Background Verification Engine
+  BGV_CREATED: "bgv.created",
+  BGV_STARTED: "bgv.started",
+  BGV_UPDATED: "bgv.updated",
+  BGV_VERIFIED: "bgv.verified",
+  BGV_REJECTED: "bgv.rejected",
+  BGV_INFO_REQUESTED: "bgv.info_requested",
+  BGV_COMPLETED: "bgv.completed"
 };
